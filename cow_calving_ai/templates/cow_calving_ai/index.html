@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calving Care AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -16,6 +19,10 @@
                         dusk: "#182431",
                         cream: "#F5F6F2"
                     },
+                    fontFamily: {
+                        display: ["Cormorant Garamond", "serif"],
+                        body: ["Plus Jakarta Sans", "sans-serif"]
+                    },
                     boxShadow: {
                         soft: "0 28px 58px -34px rgba(24, 36, 49, 0.45)"
                     }
@@ -23,14 +30,20 @@
             }
         };
     </script>
-    <link rel="stylesheet" href="{% static 'cow_calving_ai/css/ai-demo.css' %}">
+    <!-- Use the shared dev-only asset version so local CSS edits appear on refresh. -->
+    <link rel="stylesheet" href="{% static 'cow_calving_ai/css/ai-demo.css' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}">
 </head>
-<body class="bg-cream text-dusk min-h-screen">
+<body class="bg-cream text-dusk min-h-screen font-body">
     <main class="max-w-7xl mx-auto px-4 py-5 sm:py-9">
         {% if messages %}
             <div class="mb-4 space-y-3">
                 {% for message in messages %}
-                    <div class="rounded-2xl border px-4 py-3 text-sm shadow-sm {% if message.tags == 'error' %}border-rose-200 bg-rose-50 text-rose-700{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">
+                    <!-- Reuse the same timed feedback behavior as the auth pages. -->
+                    <div
+                        class="rounded-2xl border px-4 py-3 text-sm shadow-sm {% if message.tags == 'error' %}border-rose-200 bg-rose-50 text-rose-700{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}"
+                        data-auto-dismiss-message
+                        data-dismiss-after="5000"
+                    >
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -38,7 +51,7 @@
         {% endif %}
         <section class="chat-shell rounded-3xl border border-dusk/10 bg-white/90 backdrop-blur shadow-soft overflow-hidden">
             <header class="topbar px-5 sm:px-8 py-6 border-b border-dusk/10 text-center">
-                <h1 class="font-display hero-title text-2xl sm:text-[2rem] leading-tight font-bold">COW CALVING AI</h1>
+                {% include "includes/cow_calving_logo.html" with logo_wrap_class="mx-auto inline-flex flex-col items-center gap-1.5" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-14 w-14 text-[#a45d19]" logo_text_wrap_class="text-center leading-none" logo_text_class="font-display text-4xl text-[#8f4e17]" logo_tagline_class="mt-1 text-base italic text-[#b68459]" %}
                 <p class="hero-subtitle text-sm mt-2 mx-auto max-w-2xl">
                     Consultation Chat
                 </p>
@@ -88,7 +101,8 @@
         </section>
     </main>
 
-    <script src="{% static 'cow_calving_ai/js/ai-demo.js' %}" defer></script>
+    <script src="{% static 'accounts/feedback.js' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}" defer></script>
+    <script src="{% static 'cow_calving_ai/js/ai-demo.js' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}" defer></script>
 </body>
 </html>
 

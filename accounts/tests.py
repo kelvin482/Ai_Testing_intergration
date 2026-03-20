@@ -11,6 +11,8 @@ from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
 from django.test import override_settings
 
+from cow_calving_MAIN.context_processors import dev_static_version
+
 from .email_backends import BrevoAPIEmailBackend
 from .forms import CowCalvingRegisterForm
 
@@ -21,10 +23,20 @@ class AccountsViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Continue with Google")
         self.assertContains(response, 'formaction="/accounts/google/login/"')
+        self.assertContains(response, "Use your account credentials to continue.")
+        self.assertContains(response, "Username")
+        self.assertContains(response, "accounts/feedback.js")
+        self.assertContains(response, "Reimagining Dairy Farming")
 
     def test_register_page_loads(self):
         response = self.client.get(reverse("accounts:signup"))
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Set up your CowCalving profile.")
+        self.assertContains(response, "First Name")
+        self.assertContains(response, "Last Name")
+        self.assertContains(response, "Username")
+        self.assertContains(response, "Role")
+        self.assertContains(response, "Farm Name")
 
     def test_login_page_logs_out_authenticated_user(self):
         user = User.objects.create_user(
@@ -38,6 +50,7 @@ class AccountsViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Please sign in again to continue.")
+        self.assertContains(response, "data-auto-dismiss-message")
         self.assertNotIn("_auth_user_id", self.client.session)
 
     def test_register_page_logs_out_authenticated_user(self):
@@ -140,6 +153,18 @@ class CowCalvingRegisterFormTests(TestCase):
 
         self.assertFalse(second_form.is_valid())
         self.assertIn("email", second_form.errors)
+
+
+class DevStaticVersionTests(TestCase):
+    @override_settings(DEBUG=True)
+    def test_dev_static_version_changes_in_debug(self):
+        payload = dev_static_version(request=None)
+        self.assertTrue(payload["dev_static_version"].isdigit())
+
+    @override_settings(DEBUG=False)
+    def test_dev_static_version_disabled_outside_debug(self):
+        payload = dev_static_version(request=None)
+        self.assertEqual(payload["dev_static_version"], "")
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")

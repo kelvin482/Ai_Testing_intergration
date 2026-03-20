@@ -40,6 +40,8 @@ def _apply_widget_attrs(field, placeholder, extra_classes=""):
 class CowCalvingLoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Restore the original username/password sign-in fields from the
+        # earlier auth flow while keeping the newer page structure intact.
         _apply_widget_attrs(self.fields["username"], "Enter your username")
         _apply_widget_attrs(self.fields["password"], "Enter your password")
 
@@ -101,7 +103,7 @@ class CowCalvingRegisterForm(UserCreationForm):
         _apply_widget_attrs(self.fields["password1"], "Create a password")
         _apply_widget_attrs(self.fields["password2"], "Confirm your password")
 
-        for field_name, field in self.fields.items():
+        for field in self.fields.values():
             if field.required:
                 field.widget.attrs.setdefault("data-progress", "1")
 
@@ -127,5 +129,6 @@ class CowCalvingRegisterForm(UserCreationForm):
 
         if commit:
             user.save()
-        # role and farm_name are kept on the form for now until a profile model is added.
+        # role and farm_name stay on the form for now until a dedicated profile
+        # model is added for storing those extra signup details.
         return user

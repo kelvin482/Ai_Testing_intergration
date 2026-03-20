@@ -3,22 +3,18 @@
 
 {% block title %}Create Account | CowCalving{% endblock %}
 
-{% block auth_panel_image %}{% static 'accounts/images/mother-calf-clean.jpg' %}{% endblock %}
+{% block auth_panel_image %}{% static 'accounts/images/register-cow-calf.jpg' %}{% endblock %}
 {% block auth_panel_title %}Welcome to CowCalving{% endblock %}
-{% block auth_panel_text %}Create your account to track calving activity with your team and keep every key event organized from one place.{% endblock %}
+{% block auth_panel_text %}Create your account to start tracking calving activity with your team.{% endblock %}
 {% block auth_panel_points %}
-    <ul class="space-y-3 text-sm text-white/80">
+    <ul class="space-y-3 text-sm text-white/85">
         <li class="flex items-start gap-3">
-            <span class="mt-1 h-2 w-2 rounded-full bg-clay"></span>
-            Simple onboarding for farm teams and veterinary partners.
+            <span class="mt-2 h-2 w-2 rounded-full bg-white/80"></span>
+            Simple setup for your team.
         </li>
         <li class="flex items-start gap-3">
-            <span class="mt-1 h-2 w-2 rounded-full bg-clay"></span>
-            Keep calving, health, and feed insights tied to each animal.
-        </li>
-        <li class="flex items-start gap-3">
-            <span class="mt-1 h-2 w-2 rounded-full bg-clay"></span>
-            Privacy-first controls for sensitive herd data.
+            <span class="mt-2 h-2 w-2 rounded-full bg-white/80"></span>
+            Keep key records organized.
         </li>
     </ul>
 {% endblock %}
@@ -26,14 +22,6 @@
 {% block auth_form_title %}Create account{% endblock %}
 {% block auth_form_subtitle %}Set up your CowCalving profile.{% endblock %}
 {% block auth_form_class %}auth-card--signup{% endblock %}
-{% block auth_form_progress %}
-    <div class="auth-progress space-y-2">
-        <div class="h-2 rounded-full bg-sage/40 overflow-hidden">
-            <span class="auth-progress-fill block h-full w-1/5 bg-forest transition-all"></span>
-        </div>
-        <p class="text-xs text-slate-500 auth-progress-text">Step 1 of 1: Account setup</p>
-    </div>
-{% endblock %}
 
 {% block auth_form_fields %}
     <div class="auth-grid">
@@ -50,6 +38,7 @@
     </div>
 
     <div class="auth-field">
+        <!-- Restore the original signup details so onboarding still asks for the full profile fields the project started with. -->
         <label class="text-sm font-semibold text-forest" for="id_username">Username</label>
         {{ form.username }}
         {% if form.username.errors %}<small class="text-rose-600">{{ form.username.errors|striptags }}</small>{% endif %}

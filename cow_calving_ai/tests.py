@@ -136,7 +136,9 @@ class AIViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get("/app/")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "AI Advice Demo")
+        self.assertContains(response, "Consultation Chat")
+        self.assertContains(response, "Reimagining Dairy Farming")
+        self.assertContains(response, "accounts/feedback.js")
 
     def test_ai_test_redirects_when_logged_out(self):
         response = self.client.get("/app/ai/test/?q=Check+cow")

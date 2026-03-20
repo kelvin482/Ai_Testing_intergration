@@ -13,6 +13,8 @@
 - Use consistent naming and clear structure.
 - Write clean, readable code with clear, helpful comments where needed for understanding.
 - Add concise comments for custom flows, security-sensitive logic, and non-obvious decisions so a beginner can follow the code quickly.
+- Whenever code is updated, add or refresh concise comments around the changed non-obvious parts so the latest behavior stays understandable.
+- Frontend and template changes must be responsive by default and checked against small, medium, and large screen layouts before completion.
 - Ask clarifying questions when requirements are unclear.
 - Provide solutions that run with minimal modification.
 - Always use a roadmap and split work into small tasks.

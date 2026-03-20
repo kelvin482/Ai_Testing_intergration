@@ -16,6 +16,8 @@ Act as a senior software engineer.
 - Use consistent naming and clear structure.
 - Write clean, readable code with clear, helpful comments where needed for understanding.
 - Add concise comments around custom flows, security-sensitive logic, and non-obvious decisions; optimize comments for teammate understanding, not narration.
+- Whenever behavior is changed, add or refresh concise comments around the updated non-obvious code so the current implementation remains easy to follow.
+- Frontend and template work must be responsive by default and verified across small, medium, and large viewport layouts.
 - Ask clarification questions if requirements are unclear.
 - Provide solutions that can run with minimal modification.
 - Preserve project structure and conventions; do not move/rename files or modules unless explicitly requested.
