@@ -1,0 +1,312 @@
+import re
+from django.test import TestCase
+from django.urls import resolve
+from django.urls import reverse
+from unittest.mock import patch
+
+from django.core.exceptions import ImproperlyConfigured
+from django.core.mail import EmailMultiAlternatives
+from django.core import mail
+from django.contrib.auth.models import User
+from django.contrib.messages import get_messages
+from django.test import override_settings
+
+from .email_backends import BrevoAPIEmailBackend
+from .forms import CowCalvingRegisterForm
+
+
+class AccountsViewTests(TestCase):
+    def test_login_page_loads(self):
+        response = self.client.get(reverse("accounts:login"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Continue with Google")
+        self.assertContains(response, 'formaction="/accounts/google/login/"')
+
+    def test_register_page_loads(self):
+        response = self.client.get(reverse("accounts:signup"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_login_page_logs_out_authenticated_user(self):
+        user = User.objects.create_user(
+            username="signed-in-user",
+            email="signedin@example.com",
+            password="StrongPass123!",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please sign in again to continue.")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_register_page_logs_out_authenticated_user(self):
+        user = User.objects.create_user(
+            username="signed-in-user-2",
+            email="signedin2@example.com",
+            password="StrongPass123!",
+        )
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:signup"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Your previous session was closed. Create or sign in again.")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_google_login_route_exists(self):
+        match = resolve("/accounts/google/login/")
+        self.assertEqual(match.view_name, "google_login")
+
+    def test_password_reset_page_loads(self):
+        response = self.client.get("/accounts/password/reset/")
+        self.assertEqual(response.status_code, 200)
+
+    def test_password_reset_done_page_loads(self):
+        response = self.client.get("/accounts/password/reset/done/")
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("accounts:password_reset_request"))
+
+    def test_password_reset_verify_requires_code_session(self):
+        response = self.client.get("/accounts/password/reset/verify/")
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("accounts:password_reset_request"))
+
+    def test_csrf_failure_uses_friendly_page(self):
+        client = self.client_class(enforce_csrf_checks=True)
+        response = client.post(
+            reverse("accounts:login"),
+            {"username": "wrong", "password": "wrong"},
+            HTTP_HOST="127.0.0.1",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertContains(response, "This page expired", status_code=403)
+        self.assertContains(response, "Back to Sign In", status_code=403)
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_register_redirects_to_ai_page_when_email_verification_is_mandatory(self):
+        response = self.client.post(
+            reverse("accounts:signup"),
+            {
+                "first_name": "Kelvin",
+                "last_name": "Muriuki",
+                "username": "kelvin",
+                "email": "kelvin@example.com",
+                "role": "farmer",
+                "farm_name": "Demo Farm",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            },
+            follow=False,
+        )
+
+        self.assertRedirects(response, "/app/", fetch_redirect_response=False)
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(
+            any("Check your email to verify your account." in str(message) for message in messages)
+        )
+
+
+class CowCalvingRegisterFormTests(TestCase):
+    def test_register_form_rejects_duplicate_email(self):
+        first_form = CowCalvingRegisterForm(
+            data={
+                "first_name": "Amina",
+                "last_name": "Njeri",
+                "username": "amina",
+                "email": "dupe@example.com",
+                "role": "farmer",
+                "farm_name": "North Farm",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            }
+        )
+        self.assertTrue(first_form.is_valid(), first_form.errors)
+        first_form.save()
+
+        second_form = CowCalvingRegisterForm(
+            data={
+                "first_name": "Faith",
+                "last_name": "Wambui",
+                "username": "faith",
+                "email": "dupe@example.com",
+                "role": "vet",
+                "farm_name": "South Farm",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+            }
+        )
+
+        self.assertFalse(second_form.is_valid())
+        self.assertIn("email", second_form.errors)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class PasswordResetCodeFlowTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="reset-user",
+            email="reset@example.com",
+            password="OldStrongPass123!",
+        )
+
+    def test_password_reset_request_sends_code_and_redirects(self):
+        response = self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": self.user.email},
+        )
+
+        self.assertRedirects(response, reverse("accounts:password_reset_verify"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("reset your password", mail.outbox[0].body)
+        self.assertRegex(mail.outbox[0].body, r"\b\d{6}\b")
+
+        session = self.client.session
+        self.assertIn("password_reset_code_state", session)
+        self.assertEqual(
+            session["password_reset_code_state"]["email"],
+            self.user.email,
+        )
+
+    def test_password_reset_verify_updates_password(self):
+        self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": self.user.email},
+        )
+        match = re.search(r"(\d{6})", mail.outbox[0].body)
+        self.assertIsNotNone(match)
+        code = match.group(1)
+
+        response = self.client.post(
+            reverse("accounts:password_reset_verify"),
+            {
+                "code": code,
+                "new_password1": "NewStrongPass123!",
+                "new_password2": "NewStrongPass123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("accounts:login"))
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewStrongPass123!"))
+        self.assertNotIn("password_reset_code_state", self.client.session)
+
+    def test_password_reset_verify_rejects_wrong_code(self):
+        self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": self.user.email},
+        )
+
+        response = self.client.post(
+            reverse("accounts:password_reset_verify"),
+            {
+                "code": "000000",
+                "new_password1": "NewStrongPass123!",
+                "new_password2": "NewStrongPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "That reset code is not valid.")
+
+    def test_password_reset_done_redirects_to_verify_when_code_session_exists(self):
+        self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": self.user.email},
+        )
+
+        response = self.client.get(reverse("accounts:password_reset_done"))
+
+        self.assertRedirects(response, reverse("accounts:password_reset_verify"))
+
+    def test_password_reset_request_supports_social_only_account(self):
+        social_user = User.objects.create_user(
+            username="social-user",
+            email="social@example.com",
+        )
+        social_user.set_unusable_password()
+        social_user.save()
+
+        response = self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": social_user.email},
+        )
+
+        self.assertRedirects(response, reverse("accounts:password_reset_verify"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertRegex(mail.outbox[0].body, r"\b\d{6}\b")
+
+    def test_password_reset_request_shows_error_for_unknown_email(self):
+        response = self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": "missing@example.com"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "We could not find an active account with that email.")
+        self.assertNotIn("password_reset_code_state", self.client.session)
+
+    @patch("accounts.views._send_password_reset_code")
+    def test_password_reset_request_shows_error_when_email_send_fails(self, mocked_send):
+        mocked_send.side_effect = RuntimeError("mail failed")
+
+        response = self.client.post(
+            reverse("accounts:password_reset_request"),
+            {"email": self.user.email},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "We could not send the reset code right now.")
+        self.assertNotIn("password_reset_code_state", self.client.session)
+
+
+class BrevoAPIEmailBackendTests(TestCase):
+    @override_settings(BREVO_API_KEY="")
+    def test_backend_requires_api_key(self):
+        backend = BrevoAPIEmailBackend(fail_silently=False)
+        message = EmailMultiAlternatives(
+            subject="Verify your account",
+            body="Plain text body",
+            from_email="Farm App <no-reply@example.com>",
+            to=["farmer@example.com"],
+        )
+
+        with self.assertRaises(ImproperlyConfigured):
+            backend.send_messages([message])
+
+    @override_settings(
+        BREVO_API_KEY="test-key",
+        BREVO_SENDER_NAME="Cow Calving",
+    )
+    @patch("accounts.email_backends.requests.post")
+    def test_backend_sends_html_and_text_payload(self, mocked_post):
+        mocked_post.return_value.raise_for_status.return_value = None
+
+        backend = BrevoAPIEmailBackend()
+        message = EmailMultiAlternatives(
+            subject="Verify your account",
+            body="Plain text body",
+            from_email="no-reply@example.com",
+            to=["Farmer <farmer@example.com>"],
+            cc=["vet@example.com"],
+            bcc=["manager@example.com"],
+            reply_to=["Support <support@example.com>"],
+        )
+        message.attach_alternative("<p>HTML body</p>", "text/html")
+
+        sent_count = backend.send_messages([message])
+
+        self.assertEqual(sent_count, 1)
+        mocked_post.assert_called_once()
+        _, kwargs = mocked_post.call_args
+        self.assertEqual(kwargs["headers"]["api-key"], "test-key")
+        self.assertEqual(kwargs["json"]["sender"]["email"], "no-reply@example.com")
+        self.assertEqual(kwargs["json"]["sender"]["name"], "Cow Calving")
+        self.assertEqual(kwargs["json"]["to"][0]["email"], "farmer@example.com")
+        self.assertEqual(kwargs["json"]["cc"][0]["email"], "vet@example.com")
+        self.assertEqual(kwargs["json"]["bcc"][0]["email"], "manager@example.com")
+        self.assertEqual(kwargs["json"]["replyTo"]["email"], "support@example.com")
+        self.assertEqual(kwargs["json"]["subject"], "Verify your account")
+        self.assertEqual(kwargs["json"]["textContent"], "Plain text body")
+        self.assertEqual(kwargs["json"]["htmlContent"], "<p>HTML body</p>")

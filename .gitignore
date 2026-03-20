@@ -4,6 +4,7 @@ env/
 .env.*
 !.env.example
 db.sqlite3
+runserver*.log
 __pycache__/
 *.pyc
 .vscode/

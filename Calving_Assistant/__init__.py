@@ -1,1 +1,0 @@
-# Calving_Assistant package

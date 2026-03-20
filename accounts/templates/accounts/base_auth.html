@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CowCalving{% endblock %}</title>
+    <!-- Warm up the Google connection early so the OAuth button feels faster. -->
+    <link rel="dns-prefetch" href="//accounts.google.com">
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: "#1f4030",
+                        pine: "#2c5a42",
+                        sage: "#b7c4b4",
+                        mist: "#eef2ec",
+                        oat: "#f8f6f1",
+                        clay: "#c9b7a3"
+                    },
+                    fontFamily: {
+                        display: ["Fraunces", "serif"],
+                        body: ["Manrope", "sans-serif"]
+                    },
+                    boxShadow: {
+                        soft: "0 30px 60px -30px rgba(18, 41, 29, 0.45)"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .auth-panel {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .auth-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35), transparent 55%),
+                linear-gradient(135deg, rgba(8, 20, 15, 0.82), rgba(10, 26, 19, 0.25));
+            mix-blend-mode: soft-light;
+        }
+
+        .auth-panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                180deg,
+                rgba(8, 18, 12, 0.65) 0%,
+                rgba(8, 18, 12, 0.25) 45%,
+                rgba(8, 18, 12, 0.8) 100%
+            );
+            opacity: 0.9;
+        }
+
+        .auth-grid {
+            display: grid;
+            gap: 1.25rem;
+        }
+
+        @media (min-width: 768px) {
+            .auth-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        .auth-button-pending {
+            opacity: 0.88;
+            transform: translateY(1px) scale(0.99);
+            pointer-events: none;
+        }
+
+        .auth-action-button {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.65rem;
+        }
+
+        .auth-button-pending::before {
+            content: "";
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 9999px;
+            animation: auth-spin 0.8s linear infinite;
+        }
+
+        /* Apply a light page-wide progress cue while auth redirects or submits. */
+        .auth-page-pending {
+            cursor: progress;
+        }
+
+        @keyframes auth-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-mist via-oat to-emerald-50 font-body text-slate-900">
+    <main class="min-h-screen flex items-center justify-center px-4 py-10 sm:py-12">
+        <section class="w-full max-w-5xl bg-white/80 backdrop-blur rounded-[28px] border border-white/70 shadow-soft overflow-hidden">
+            <div class="grid lg:grid-cols-[1.05fr_0.95fr]">
+                <aside class="auth-panel relative px-6 py-12 sm:px-10 lg:px-12 lg:py-16 text-white" style="background-image: url('{% block auth_panel_image %}{% endblock %}');">
+                    <div class="absolute inset-0">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_60%)]"></div>
+                        <div class="absolute inset-0 bg-[conic-gradient(from_230deg,rgba(10,30,20,0.8),rgba(18,50,34,0.4),rgba(10,30,20,0.8))]"></div>
+                    </div>
+                    <div class="absolute inset-0 opacity-40 bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%224%22%20height=%224%22%20viewBox=%220%200%204%204%22%3E%3Cpath%20d=%22M0%200h1v1H0z%22%20fill=%22%23ffffff%22%20fill-opacity=%220.2%22/%3E%3C/svg%3E')]"></div>
+                    <div class="relative z-10 space-y-5">
+                        <p class="text-xs tracking-[0.4em] uppercase text-white/70">CowCalving</p>
+                        <h1 class="font-display text-3xl sm:text-4xl leading-tight">
+                            {% block auth_panel_title %}{% endblock %}
+                        </h1>
+                        <p class="text-sm sm:text-base text-white/80 max-w-xl">
+                            {% block auth_panel_text %}{% endblock %}
+                        </p>
+                        {% block auth_panel_points %}{% endblock %}
+                    </div>
+                </aside>
+
+                <div class="bg-white/95 px-6 py-8 sm:px-9 lg:px-10 lg:border-l border-white/70">
+                    <form method="post" class="space-y-5 {% block auth_form_class %}{% endblock %}" id="auth-form">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+                        {% if messages %}
+                            <div class="space-y-2">
+                                {% for message in messages %}
+                                    <div class="rounded-2xl border px-4 py-3 text-sm {% if message.tags == 'error' %}border-rose-200 bg-rose-50 text-rose-700{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">
+                                        {{ message }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% block auth_form_progress %}{% endblock %}
+
+                        <div>
+                            <h2 class="font-display text-2xl sm:text-3xl text-forest">{% block auth_form_title %}{% endblock %}</h2>
+                            <p class="text-sm text-slate-600 mt-2">{% block auth_form_subtitle %}{% endblock %}</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            {% block auth_form_fields %}{% endblock %}
+                        </div>
+
+                        {% block auth_form_meta %}{% endblock %}
+
+                        <button type="submit" class="auth-action-button w-full rounded-2xl bg-forest py-3 text-white font-semibold tracking-wide shadow-md shadow-forest/20 hover:bg-pine hover:shadow-lg transition active:translate-y-px active:scale-[0.99]" data-submit-feedback data-pending-text="Signing in...">
+                            {% block auth_submit_text %}Continue{% endblock %}
+                        </button>
+
+                        <p class="text-sm text-slate-600 text-center">
+                            {% block auth_switch_text %}{% endblock %}
+                        </p>
+
+                        <p class="text-xs text-slate-500 text-center leading-relaxed">
+                            {% block auth_legal_text %}{% endblock %}
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script src="{% static 'accounts/auth.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "accounts/base_auth.html" %}
+{% load static %}
+
+{% block title %}Login | CowCalving{% endblock %}
+
+{% block auth_panel_title %}Sign in to manage calving records and herd monitoring.{% endblock %}
+{% block auth_panel_text %}Built for farm teams and veterinarians who need reliable records during critical calving windows.{% endblock %}
+{% block auth_panel_image %}{% static 'accounts/images/calving-cow.jpg' %}{% endblock %}
+{% block auth_panel_points %}
+    <ul class="space-y-3 text-sm text-white/85">
+        <li class="flex items-start gap-3">
+            <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+            <span>Track calving timelines, observations, and interventions in one place.</span>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+            <span>Keep staff aligned with shared notes and clear next steps.</span>
+        </li>
+        <li class="flex items-start gap-3">
+            <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+            <span>Access AI-assisted guidance when decisions need speed.</span>
+        </li>
+    </ul>
+{% endblock %}
+
+{% block auth_form_title %}Sign in{% endblock %}
+{% block auth_form_subtitle %}Use your account credentials to continue.{% endblock %}
+
+{% block auth_form_fields %}
+    <div class="auth-field">
+        <label class="text-sm font-semibold text-forest" for="id_username">Username</label>
+        {{ form.username }}
+        {% if form.username.errors %}<small class="text-rose-600">{{ form.username.errors|striptags }}</small>{% endif %}
+    </div>
+
+    <div class="auth-field">
+        <label class="text-sm font-semibold text-forest" for="id_password">Password</label>
+        {{ form.password }}
+        {% if form.password.errors %}<small class="text-rose-600">{{ form.password.errors|striptags }}</small>{% endif %}
+    </div>
+{% endblock %}
+
+{% block auth_form_meta %}
+    <div class="flex items-center justify-between text-sm text-slate-600">
+        <label class="inline-flex items-center gap-2">
+            <input type="checkbox" name="remember_me" class="h-4 w-4 rounded border-slate-300 text-forest">
+            <span>Remember me</span>
+        </label>
+        <a class="text-forest font-semibold hover:underline" href="{% url 'accounts:password_reset_request' %}">Forgot password?</a>
+    </div>
+    <div class="text-center text-xs text-slate-500 tracking-[0.2em]">OR CONTINUE WITH</div>
+    <div class="grid gap-3">
+        <button
+            type="submit"
+            formaction="{% url 'google_login' %}"
+            formmethod="post"
+            formnovalidate
+            class="auth-action-button w-full rounded-2xl border border-rose-200 bg-rose-50 py-2 text-center font-semibold text-rose-800 hover:bg-rose-100 transition active:translate-y-px active:scale-[0.99]"
+            data-submit-feedback
+            data-pending-text="Opening Google..."
+        >
+            Continue with Google
+        </button>
+    </div>
+{% endblock %}
+{% block auth_submit_text %}Sign In{% endblock %}
+{% block auth_switch_text %}No account yet? <a class="text-forest font-semibold" href="{% url 'accounts:signup' %}">Create account</a>{% endblock %}
+{% block auth_legal_text %}By continuing, you agree to responsible use of farm health records.{% endblock %}

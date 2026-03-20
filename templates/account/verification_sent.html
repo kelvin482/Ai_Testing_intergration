@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | CowCalving</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        forest: "#1f4030",
+                        pine: "#2c5a42",
+                        sage: "#b7c4b4",
+                        mist: "#eef2ec",
+                        oat: "#f8f6f1",
+                        clay: "#c9b7a3"
+                    },
+                    fontFamily: {
+                        display: ["Fraunces", "serif"],
+                        body: ["Manrope", "sans-serif"]
+                    },
+                    boxShadow: {
+                        soft: "0 30px 60px -30px rgba(18, 41, 29, 0.45)"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .auth-panel {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .auth-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35), transparent 55%),
+                linear-gradient(135deg, rgba(8, 20, 15, 0.82), rgba(10, 26, 19, 0.25));
+            mix-blend-mode: soft-light;
+        }
+
+        .auth-panel::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                180deg,
+                rgba(8, 18, 12, 0.65) 0%,
+                rgba(8, 18, 12, 0.25) 45%,
+                rgba(8, 18, 12, 0.8) 100%
+            );
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-mist via-oat to-emerald-50 font-body text-slate-900">
+    <main class="min-h-screen flex items-center justify-center px-4 py-10 sm:py-12">
+        <section class="w-full max-w-5xl bg-white/80 backdrop-blur rounded-[28px] border border-white/70 shadow-soft overflow-hidden">
+            <div class="grid lg:grid-cols-[1.05fr_0.95fr]">
+                <aside class="auth-panel relative px-6 py-12 sm:px-10 lg:px-12 lg:py-16 text-white" style="background-image: url('{% static 'accounts/images/mother-calf-clean.jpg' %}');">
+                    <div class="absolute inset-0">
+                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_60%)]"></div>
+                        <div class="absolute inset-0 bg-[conic-gradient(from_230deg,rgba(10,30,20,0.8),rgba(18,50,34,0.4),rgba(10,30,20,0.8))]"></div>
+                    </div>
+                    <div class="absolute inset-0 opacity-40 bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%224%22%20height=%224%22%20viewBox=%220%200%204%204%22%3E%3Cpath%20d=%22M0%200h1v1H0z%22%20fill=%22%23ffffff%22%20fill-opacity=%220.2%22/%3E%3C/svg%3E')]"></div>
+                    <div class="relative z-10 space-y-5">
+                        <p class="text-xs tracking-[0.4em] uppercase text-white/70">CowCalving</p>
+                        <h1 class="font-display text-3xl sm:text-4xl leading-tight">
+                            Almost there. Verify your email to finish setup.
+                        </h1>
+                        <p class="text-sm sm:text-base text-white/80 max-w-xl">
+                            We sent a verification email so your account can be trusted before you sign in fully.
+                        </p>
+                        <ul class="space-y-3 text-sm text-white/85">
+                            <li class="flex items-start gap-3">
+                                <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+                                Open the latest email from CowCalving.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+                                Click the verification link inside the message.
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="mt-2 h-2 w-2 rounded-full bg-sage"></span>
+                                Check spam if the email does not arrive quickly.
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+
+                <div class="bg-white/95 px-6 py-8 sm:px-9 lg:px-10 lg:border-l border-white/70 flex items-center">
+                    <div class="w-full space-y-6">
+                        <div>
+                            <h2 class="font-display text-2xl sm:text-3xl text-forest">Verify your email address</h2>
+                            <p class="text-sm text-slate-600 mt-2">
+                                Once you click the verification link from your inbox, your account will be ready for full use.
+                            </p>
+                        </div>
+
+                        <div class="rounded-3xl border border-sage/40 bg-mist/60 px-5 py-4 text-sm text-slate-700 space-y-2">
+                            <p>You can continue exploring the AI page while you wait for the email.</p>
+                            <p>If you do not receive the email in a few minutes, check spam or sign up again carefully.</p>
+                        </div>
+
+                        <div class="space-y-3">
+                            <a href="/app/" class="block w-full rounded-2xl bg-forest py-3 text-center text-white font-semibold tracking-wide shadow-md shadow-forest/20 hover:bg-pine hover:shadow-lg transition">
+                                Continue to AI Page
+                            </a>
+                            <a href="{% url 'accounts:login' %}" class="block w-full rounded-2xl border border-sage/50 py-3 text-center font-semibold text-forest hover:bg-mist transition">
+                                Back to Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
