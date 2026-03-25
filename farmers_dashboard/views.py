@@ -6,6 +6,140 @@ from users.permissions import role_required
 from users.services import get_or_create_profile
 
 
+def _build_due_soon_cows():
+    return [
+        {
+            "cow_id": "#C-042",
+            "name": "Bessie",
+            "detail": "Due in 2 days",
+            "status": "Urgent",
+            "status_tone": "rose",
+        },
+        {
+            "cow_id": "#C-017",
+            "name": "Nasha",
+            "detail": "Due in 4 days",
+            "status": "Soon",
+            "status_tone": "amber",
+        },
+        {
+            "cow_id": "#C-031",
+            "name": "Daisy",
+            "detail": "Due in 5 days",
+            "status": "Soon",
+            "status_tone": "amber",
+        },
+        {
+            "cow_id": "#C-009",
+            "name": "Rosa",
+            "detail": "Due in 7 days",
+            "status": "On track",
+            "status_tone": "emerald",
+        },
+    ]
+
+
+def _build_recent_alert_feed():
+    return [
+        {
+            "title": "#C-042 showing early labour signs",
+            "detail": "15 min ago - Vet notified",
+            "tone": "rose",
+        },
+        {
+            "title": "#C-017 missed feeding",
+            "detail": "2 hrs ago - Check required",
+            "tone": "amber",
+        },
+        {
+            "title": "#C-031 weight below target",
+            "detail": "Yesterday - Review feeding plan",
+            "tone": "amber",
+        },
+        {
+            "title": "Calf #B-011 health check completed",
+            "detail": "Yesterday - All clear",
+            "tone": "emerald",
+        },
+    ]
+
+
+def _build_navigation_sections():
+    return [
+        {
+            "label": "Main",
+            "items": [
+                {
+                    "label": "Overview",
+                    "url": reverse("farmers_dashboard:dashboard"),
+                    "view_name": "farmers_dashboard:dashboard",
+                    "icon": "overview",
+                },
+                {
+                    "label": "My herd",
+                    "url": reverse("farmers_dashboard:herd"),
+                    "view_name": "farmers_dashboard:herd",
+                    "icon": "herd",
+                    "badge": str(len(_build_due_soon_cows())),
+                },
+                {
+                    "label": "Alerts",
+                    "url": reverse("farmers_dashboard:alerts"),
+                    "view_name": "farmers_dashboard:alerts",
+                    "icon": "alerts",
+                    "badge": str(len(_build_recent_alert_feed())),
+                },
+            ],
+        },
+        {
+            "label": "Farm",
+            "items": [
+                {
+                    "label": "Reports",
+                    "url": reverse("farmers_dashboard:reports"),
+                    "view_name": "farmers_dashboard:reports",
+                    "icon": "reports",
+                },
+            ],
+        },
+    ]
+
+
+def _build_farmer_workspace_menu_sections():
+    return [
+        {
+            "label": "Workspace",
+            "items": [
+                {
+                    "label": "Profile details",
+                    "description": "Review farm and account information.",
+                    "url": reverse("users:profile"),
+                },
+                {
+                    "label": "Update farm profile",
+                    "description": "Keep the farm contact details ready.",
+                    "url": reverse("users:profile_edit"),
+                },
+            ],
+        },
+        {
+            "label": "Support",
+            "items": [
+                {
+                    "label": "Ask AI",
+                    "description": "Open quick guidance when you are stuck.",
+                    "url": reverse("cow_calving_ai:index"),
+                },
+                {
+                    "label": "Support hub",
+                    "description": "Open escalation help for urgent issues.",
+                    "url": reverse("Core_Web:support"),
+                },
+            ],
+        },
+    ]
+
+
 def _build_profile_readiness(user, profile):
     readiness_items = [
         {
@@ -34,87 +168,79 @@ def _build_profile_readiness(user, profile):
     return readiness_items, completed_items, readiness_percent
 
 
-def _build_farmer_navigation():
+def _build_farmer_summary_cards(readiness_percent):
     return [
         {
-            "label": "Overview",
-            "description": "Dashboard summary and key entry points.",
-            "url": reverse("farmers_dashboard:dashboard"),
-            "view_name": "farmers_dashboard:dashboard",
-        },
-        {
-            "label": "Herd",
-            "description": "Animal records layout and herd tracking sections.",
-            "url": reverse("farmers_dashboard:herd"),
-            "view_name": "farmers_dashboard:herd",
-        },
-        {
-            "label": "Alerts",
-            "description": "Priority issues, reminders, and follow-up flow.",
-            "url": reverse("farmers_dashboard:alerts"),
-            "view_name": "farmers_dashboard:alerts",
-        },
-        {
-            "label": "Reports",
-            "description": "Performance summaries and trend presentation.",
-            "url": reverse("farmers_dashboard:reports"),
-            "view_name": "farmers_dashboard:reports",
-        },
-    ]
-
-
-def _build_workspace_links():
-    return [
-        {
-            "label": "Edit profile",
-            "description": "Update personal and farm identity details.",
-            "url": reverse("users:profile_edit"),
-        },
-        {
-            "label": "AI workspace",
-            "description": "Open the shared assistant workspace.",
-            "url": reverse("cow_calving_ai:index"),
-        },
-        {
-            "label": "Support hub",
-            "description": "Jump to public help and escalation guidance.",
-            "url": reverse("Core_Web:support"),
-        },
-    ]
-
-
-def _build_farmer_summary_cards(profile, readiness_percent, completed_items):
-    return [
-        {
-            "label": "Workspace setup",
-            "value": f"{readiness_percent}%",
-            "detail": f"{completed_items} of 4 essential profile fields saved.",
-            "tone": "emerald",
-        },
-        {
-            "label": "Farmer pages",
-            "value": "4",
-            "detail": "Overview, herd, alerts, and reports are now split out.",
-            "tone": "amber",
-        },
-        {
-            "label": "Current role",
-            "value": profile.role.name if profile.role else "Farmer",
-            "detail": "Role-aware routing remains attached to this workspace.",
+            "label": "Total cows",
+            "value": "48",
+            "detail": "Active herd ready for daily review.",
             "tone": "sky",
         },
         {
-            "label": "Connected tools",
-            "value": "3",
-            "detail": "Profile, AI workspace, and support stay one click away.",
-            "tone": "slate",
+            "label": "Due this week",
+            "value": str(len(_build_due_soon_cows())),
+            "detail": "Calving checks expected soon.",
+            "tone": "amber",
+        },
+        {
+            "label": "Active alerts",
+            "value": str(len(_build_recent_alert_feed())),
+            "detail": "Items that need attention now.",
+            "tone": "rose",
+        },
+        {
+            "label": "Profile ready",
+            "value": f"{readiness_percent}%",
+            "detail": "Farm essentials saved for this account.",
+            "tone": "emerald",
+        },
+    ]
+
+
+def _build_farmer_quick_actions():
+    return [
+        {
+            "label": "My herd",
+            "detail": "Open animal records and due-soon cows.",
+            "url": reverse("farmers_dashboard:herd"),
+            "tone": "sky",
+        },
+        {
+            "label": "Reports",
+            "detail": "See simple farm trends when needed.",
+            "url": reverse("farmers_dashboard:reports"),
+            "tone": "emerald",
+        },
+        {
+            "label": "Update profile",
+            "detail": "Keep farm contact details ready.",
+            "url": reverse("users:profile_edit"),
+            "tone": "amber",
+        },
+    ]
+
+
+def _build_dashboard_quick_links():
+    return [
+        {
+            "label": "Herd records",
+            "description": "Open full animal details, due dates, and follow-up notes.",
+            "url": reverse("farmers_dashboard:herd"),
+        },
+        {
+            "label": "Reports",
+            "description": "See trends only when you need a deeper farm summary.",
+            "url": reverse("farmers_dashboard:reports"),
+        },
+        {
+            "label": "Ask AI",
+            "description": "Use quick guidance to unblock the next farm action.",
+            "url": reverse("cow_calving_ai:index"),
         },
     ]
 
 
 def _build_herd_preview_cards():
-    # The farmer app does not have herd models yet, so these cards are a
-    # layout preview for the eventual live records screens.
     return [
         {
             "name": "Bella 004",
@@ -229,24 +355,33 @@ def _build_farmer_dashboard_context(
     page_intro,
 ):
     profile = get_or_create_profile(request.user)
+    display_name = request.user.get_full_name().strip() or request.user.username
+    first_name = request.user.first_name.strip() if request.user.first_name else display_name.split()[0]
+    initials = "".join(part[0].upper() for part in display_name.split()[:2] if part) or "FM"
     readiness_items, completed_items, readiness_percent = _build_profile_readiness(
         request.user,
         profile,
     )
     return {
         "dashboard_home_url": reverse("farmers_dashboard:dashboard"),
+        "back_to_website_url": reverse("Core_Web:home"),
+        "ai_workspace_url": reverse("cow_calving_ai:index"),
+        "ai_workspace_embed_url": f"{reverse('cow_calving_ai:index')}?embedded=1",
         "profile": profile,
+        "display_name": display_name,
+        "farmer_initials": initials,
+        "dashboard_greeting": f"good morning, {first_name}",
         "page_title": page_title,
         "page_eyebrow": page_eyebrow,
         "page_heading": page_heading,
         "page_intro": page_intro,
-        "farmer_navigation": _build_farmer_navigation(),
-        "workspace_links": _build_workspace_links(),
-        "summary_cards": _build_farmer_summary_cards(
-            profile,
-            readiness_percent,
-            completed_items,
-        ),
+        "navigation_sections": _build_navigation_sections(),
+        "workspace_menu_sections": _build_farmer_workspace_menu_sections(),
+        "summary_cards": _build_farmer_summary_cards(readiness_percent),
+        "due_soon_cows": _build_due_soon_cows(),
+        "recent_alert_feed": _build_recent_alert_feed(),
+        "farmer_quick_actions": _build_farmer_quick_actions(),
+        "dashboard_quick_links": _build_dashboard_quick_links(),
         "profile_readiness_items": readiness_items,
         "profile_readiness_percent": readiness_percent,
         "herd_preview_cards": _build_herd_preview_cards(),
@@ -254,6 +389,10 @@ def _build_farmer_dashboard_context(
         "report_highlights": _build_report_highlights(),
         "report_bars": _build_report_bars(),
         "report_leaderboard": _build_report_leaderboard(),
+        "header_primary_action": {
+            "label": "Open alerts",
+            "url": reverse("farmers_dashboard:alerts"),
+        },
     }
 
 
@@ -267,12 +406,8 @@ def dashboard_view(request):
             request,
             page_title="Farmer Dashboard | CowCalving",
             page_eyebrow="Farmer workspace",
-            page_heading="A cleaner dashboard for daily farm work",
-            page_intro=(
-                "The farmer area now uses focused pages instead of one long "
-                "template, making the structure easier to grow and easier to "
-                "understand."
-            ),
+            page_heading="Daily farm overview",
+            page_intro="See what needs attention now, then open herd, alerts, or reports only when you need more detail.",
         ),
     )
 

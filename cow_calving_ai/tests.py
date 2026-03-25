@@ -141,6 +141,16 @@ class AIViewTests(TestCase):
         self.assertContains(response, "accounts/feedback.js")
         self.assertContains(response, 'data-ai-endpoint="/app/ai/test/"')
 
+    def test_index_supports_embedded_mode(self):
+        self.client.force_login(self.user)
+        response = self.client.get("/app/?embedded=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard assistant")
+        self.assertContains(response, "Ask Cow Calving AI")
+        self.assertContains(response, "Quick prompts")
+        self.assertContains(response, 'class="chat-shell embedded-shell h-full rounded-none border-0 shadow-none overflow-hidden"', html=False)
+        self.assertEqual(response.headers.get("X-Frame-Options"), "SAMEORIGIN")
+
     def test_ai_test_redirects_when_logged_out(self):
         response = self.client.get("/app/ai/test/?q=Check+cow")
         self.assertEqual(response.status_code, 302)

@@ -4,8 +4,10 @@ from .views import (
     analytics_view,
     dashboard_view,
     diagnosis_view,
+    farm_map_view,
     farms_view,
     labs_view,
+    medical_records_view,
     patients_view,
     prescriptions_view,
     schedule_view,
@@ -16,6 +18,8 @@ app_name = "veterinary_dashboard"
 
 urlpatterns = [
     path("", dashboard_view, name="dashboard"),
+    path("farm-map/", farm_map_view, name="farm_map"),
+    path("medical-records/", medical_records_view, name="medical_records"),
     path("schedule/", schedule_view, name="schedule"),
     path("farms/", farms_view, name="farms"),
     path("patients/", patients_view, name="patients"),

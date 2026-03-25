@@ -2,28 +2,59 @@ import calendar
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 
 from users.permissions import role_required
 from users.services import get_dashboard_url_for_user, get_or_create_profile
 
 
-def _build_primary_navigation():
+def _build_navigation_sections():
+    urgent_case_count = sum(
+        1 for item in _build_patient_records() if item["tone"] == "rose"
+    )
     return [
-        {"label": "Dashboard", "url": reverse("veterinary_dashboard:dashboard"), "view_name": "veterinary_dashboard:dashboard"},
-        {"label": "Schedule", "url": reverse("veterinary_dashboard:schedule"), "view_name": "veterinary_dashboard:schedule"},
-        {"label": "Patients", "url": reverse("veterinary_dashboard:patients"), "view_name": "veterinary_dashboard:patients"},
-        {"label": "Labs", "url": reverse("veterinary_dashboard:labs"), "view_name": "veterinary_dashboard:labs"},
-        {"label": "Telehealth", "url": reverse("veterinary_dashboard:telehealth"), "view_name": "veterinary_dashboard:telehealth"},
-    ]
-
-
-def _build_secondary_navigation():
-    return [
-        {"label": "Farms", "url": reverse("veterinary_dashboard:farms"), "view_name": "veterinary_dashboard:farms"},
-        {"label": "Diagnosis", "url": reverse("veterinary_dashboard:diagnosis"), "view_name": "veterinary_dashboard:diagnosis"},
-        {"label": "Rx", "url": reverse("veterinary_dashboard:prescriptions"), "view_name": "veterinary_dashboard:prescriptions"},
-        {"label": "Analytics", "url": reverse("veterinary_dashboard:analytics"), "view_name": "veterinary_dashboard:analytics"},
-        {"label": "My Profile", "url": reverse("users:profile"), "view_name": "users:profile"},
+        {
+            "label": "Main",
+            "items": [
+                {
+                    "label": "Overview",
+                    "url": reverse("veterinary_dashboard:dashboard"),
+                    "view_name": "veterinary_dashboard:dashboard",
+                    "icon": "overview",
+                },
+                {
+                    "label": "Active Case",
+                    "url": reverse("veterinary_dashboard:patients"),
+                    "view_name": "veterinary_dashboard:patients",
+                    "icon": "case",
+                    "badge": str(urgent_case_count),
+                },
+                {
+                    "label": "Farm Map",
+                    "url": reverse("veterinary_dashboard:farm_map"),
+                    "view_name": "veterinary_dashboard:farm_map",
+                    "icon": "map",
+                },
+            ],
+        },
+        {
+            "label": "Farms",
+            "items": [
+                {
+                    "label": "My Farms",
+                    "url": reverse("veterinary_dashboard:farms"),
+                    "view_name": "veterinary_dashboard:farms",
+                    "icon": "farms",
+                    "badge": str(len(_build_farm_overview())),
+                },
+                {
+                    "label": "Medical Records",
+                    "url": reverse("veterinary_dashboard:medical_records"),
+                    "view_name": "veterinary_dashboard:medical_records",
+                    "icon": "records",
+                },
+            ],
+        },
     ]
 
 
@@ -32,7 +63,7 @@ def _build_workspace_menu():
         {
             "label": "Account",
             "items": [
-                {"label": "Dashboard", "description": "Open the main workspace.", "url": reverse("veterinary_dashboard:dashboard")},
+                {"label": "Overview", "description": "Return to the main command center.", "url": reverse("veterinary_dashboard:dashboard")},
                 {"label": "My Profile", "description": "Review saved account details.", "url": reverse("users:profile")},
                 {"label": "Edit Profile", "description": "Update account information.", "url": reverse("users:profile_edit")},
             ],
@@ -40,6 +71,7 @@ def _build_workspace_menu():
         {
             "label": "Workspace",
             "items": [
+                {"label": "Schedule", "description": "Open today's route planner.", "url": reverse("veterinary_dashboard:schedule")},
                 {"label": "AI Workspace", "description": "Open guided support.", "url": reverse("cow_calving_ai:index")},
             ],
         },
@@ -47,11 +79,27 @@ def _build_workspace_menu():
 
 
 def _build_summary_cards():
+    overview_cases = _build_overview_case_rows()
+    schedule_rows = _build_overview_schedule_rows()
     return [
-        {"label": "Visits today", "value": "4", "detail": "2 urgent and 2 scheduled.", "tone": "navy"},
-        {"label": "Assigned farms", "value": "12", "detail": "Active coverage across Rift Valley and Central Kenya.", "tone": "teal"},
-        {"label": "Open cases", "value": "7", "detail": "3 need follow-up today.", "tone": "amber"},
-        {"label": "Pending labs", "value": "3", "detail": "Waiting for sign-off.", "tone": "rose"},
+        {
+            "label": "Active cases",
+            "value": str(len(overview_cases)),
+            "detail": "Open patient files",
+            "tone": "rose",
+        },
+        {
+            "label": "Today's visits",
+            "value": str(len(schedule_rows)),
+            "detail": "Scheduled for today",
+            "tone": "navy",
+        },
+        {
+            "label": "Urgent now",
+            "value": str(sum(1 for item in overview_cases if item["tone"] == "rose")),
+            "detail": "Need immediate review",
+            "tone": "amber",
+        },
     ]
 
 
@@ -116,8 +164,14 @@ def _build_patient_records():
             "tone": "rose",
             "issue": "Labour follow-up",
             "summary": "Active labour case with escalation already in telehealth.",
+            "status_banner": "Labour in progress",
             "next_step": "Visit first and record delivery outcome.",
             "last_update": "08:04 today",
+            "care_stages": ["Pre-calving", "Early labour", "Active labour", "Delivery", "Post-calving"],
+            "current_stage": 2,
+            "medical_note": "Cow presented BCS 2.8 at the last check. Monitor for dystocia risk and move quickly if contractions stall.",
+            "medications": ["Oxytocin 10 IU", "Calcium borogluconate", "Lubricant gel", "Dystocia kit"],
+            "ai_recommendation": "AI recommends maintaining close labour monitoring and escalating to assisted delivery if progress stalls after the next check-in.",
             "stats": [
                 {"label": "Age", "value": "5 yr"},
                 {"label": "Weight", "value": "390 kg"},
@@ -125,16 +179,17 @@ def _build_patient_records():
                 {"label": "Temp", "value": "39.2 C"},
             ],
             "history": [
-                {"date": "20 Mar", "title": "Urgent labour follow-up", "detail": "Telehealth escalation created and field visit scheduled for 08:00."},
-                {"date": "02 Dec", "title": "Mastitis treatment", "detail": "Oxytetracycline course completed and milk withholding explained."},
-                {"date": "14 Sep", "title": "FMD booster", "detail": "Routine vaccination recorded with no adverse reaction."},
+                {"date": "09:12", "title": "Labour signs reported by farmer", "detail": "James Mwangi submitted an alert from the farm app."},
+                {"date": "09:18", "title": "Vet acknowledged and reviewed remotely", "detail": "Remote assessment started after the escalation came through telehealth."},
+                {"date": "09:45", "title": "Video call confirmed contractions", "detail": "Contractions reported every 8 minutes and farmer advised to prepare the pen."},
+                {"date": "10:20", "title": "On-site follow-up arranged", "detail": "Field visit is underway with the labour kit ready."},
             ],
             "primary_url": reverse("veterinary_dashboard:diagnosis"),
-            "primary_label": "Open diagnosis",
+            "primary_label": "Log update",
             "secondary_url": reverse("veterinary_dashboard:telehealth"),
-            "secondary_label": "Open telehealth",
+            "secondary_label": "Call farmer",
             "extra_url": reverse("veterinary_dashboard:schedule"),
-            "extra_label": "View schedule",
+            "extra_label": "Open route",
         },
         {
             "id": "bella-004",
@@ -148,8 +203,14 @@ def _build_patient_records():
             "tone": "amber",
             "issue": "Treatment renewal",
             "summary": "Treatment course ends today and needs prescription review.",
+            "status_banner": "Treatment review due",
             "next_step": "Review medication and renew only if symptoms persist.",
             "last_update": "09:10 today",
+            "care_stages": ["Reported", "Assessment", "Treatment", "Follow-up", "Closed"],
+            "current_stage": 3,
+            "medical_note": "Treatment is ending today. Review hydration, appetite, and udder status before renewing the prescription.",
+            "medications": ["Oxytetracycline", "NSAID", "Milk withholding card"],
+            "ai_recommendation": "AI recommends confirming symptom persistence before issuing a renewal and documenting withholding guidance for the farmer.",
             "stats": [
                 {"label": "Age", "value": "4 yr"},
                 {"label": "Weight", "value": "420 kg"},
@@ -180,8 +241,14 @@ def _build_patient_records():
             "tone": "navy",
             "issue": "Lab interpretation",
             "summary": "Lab interpretation is pending before farmer sharing.",
+            "status_banner": "Lab review pending",
             "next_step": "Review CBC and milk panel before sending advice.",
             "last_update": "11:00 today",
+            "care_stages": ["Sample sent", "Lab ready", "Review", "Share guidance", "Closed"],
+            "current_stage": 2,
+            "medical_note": "Elevated WBC and high SCC need veterinary interpretation before the farmer acts on the result.",
+            "medications": ["CMT strips", "CBC panel", "Milk panel summary"],
+            "ai_recommendation": "AI recommends linking the lab result to the active case note before issuing treatment guidance.",
             "stats": [
                 {"label": "Age", "value": "3 yr"},
                 {"label": "Weight", "value": "350 kg"},
@@ -212,8 +279,14 @@ def _build_patient_records():
             "tone": "amber",
             "issue": "Suspected mastitis",
             "summary": "Symptoms logged ahead of the afternoon visit with milk drop reported.",
+            "status_banner": "Visit pending",
             "next_step": "Confirm mastitis signs during the 14:00 health check.",
             "last_update": "11:40 today",
+            "care_stages": ["Reported", "Remote triage", "Visit scheduled", "Treatment", "Recovery"],
+            "current_stage": 2,
+            "medical_note": "Farmer reported milk drop and tenderness. Confirm quarter involvement and rule out fever on site.",
+            "medications": ["CMT kit", "Thermometer", "Intramammary tube"],
+            "ai_recommendation": "AI recommends confirming mastitis severity during the visit before choosing between local treatment and full escalation.",
             "stats": [
                 {"label": "Age", "value": "6 yr"},
                 {"label": "Weight", "value": "410 kg"},
@@ -410,23 +483,159 @@ def _build_schedule_planner():
     }
 
 
+def _build_dashboard_greeting() -> str:
+    hour = timezone.localtime().hour
+    if hour < 12:
+        return "good morning"
+    if hour < 18:
+        return "good afternoon"
+    return "good evening"
+
+
+def _build_overview_case_rows():
+    case_flags = {
+        "rose": "Respond now",
+        "amber": "Monitor",
+        "navy": "Review",
+    }
+    rows = []
+    for record in _build_patient_records():
+        rows.append(
+            {
+                "code": f"#C-{record['tag_number']}",
+                "detail": f"{record['farm']} · {record['issue']}",
+                "flag": case_flags.get(record["tone"], record["status"]),
+                "tone": record["tone"],
+            }
+        )
+    return rows
+
+
+def _build_dashboard_farm_cards():
+    farm_flags = {
+        "rose": "2 urgent",
+        "amber": "Monitoring",
+        "teal": "Stable",
+    }
+    cards = []
+    for farm in _build_farm_overview():
+        words = farm["name"].replace("-", " ").split()
+        initials = "".join(word[0].upper() for word in words[:2] if word) or "FM"
+        cards.append(
+            {
+                "name": farm["name"],
+                "detail": farm["detail"],
+                "flag": farm_flags.get(farm["tone"], farm["risk"]),
+                "initials": initials,
+                "tone": farm["tone"],
+            }
+        )
+    return cards
+
+
+def _build_overview_schedule_rows():
+    return [
+        {
+            "time": "08:00",
+            "farm": "Moi Farm",
+            "visit_type": "Pre-calving check",
+            "detail": "Cow #C-055",
+        },
+        {
+            "time": "10:30",
+            "farm": "Green Acres",
+            "visit_type": "Vaccination run",
+            "detail": "8 cows",
+        },
+        {
+            "time": "14:00",
+            "farm": "Moi Farm",
+            "visit_type": "Follow-up check",
+            "detail": "Calf #B-009",
+        },
+    ]
+
+
+def _build_dashboard_quick_links():
+    return [
+        {
+            "label": "Open farm map",
+            "description": "Check the region visually when routing needs more context than the overview shows.",
+            "url": reverse("veterinary_dashboard:farm_map"),
+        },
+        {
+            "label": "My farms",
+            "description": "Review assigned farms only when you need counts, alerts, and due-soon work.",
+            "url": reverse("veterinary_dashboard:farms"),
+        },
+        {
+            "label": "Medical records",
+            "description": "Open treatment history and recent lab summaries without crowding the homepage.",
+            "url": reverse("veterinary_dashboard:medical_records"),
+        },
+    ]
+
+
+def _build_farm_map_context():
+    return {
+        "region_label": "Nakuru region",
+        "vet_status_label": "Dr. Njenga en route",
+        "legend_items": [
+            {"label": "Urgent cases", "tone": "rose"},
+            {"label": "Needs monitoring", "tone": "amber"},
+            {"label": "All clear", "tone": "teal"},
+            {"label": "Vet location", "tone": "navy"},
+        ],
+        "map_markers": [
+            {"label": "MW", "name": "Mwangi", "status": "2 urgent", "tone": "rose", "top": "24%", "left": "43%"},
+            {"label": "KM", "name": "Kamau", "status": "monitor", "tone": "amber", "top": "32%", "left": "70%"},
+            {"label": "MK", "name": "Mutuku", "status": "all clear", "tone": "teal", "top": "27%", "left": "88%"},
+            {"label": "VT", "name": "Dr. Njenga", "status": "en route", "tone": "navy", "top": "46%", "left": "53%"},
+            {"label": "NG", "name": "Ngugi", "status": "all clear", "tone": "teal", "top": "62%", "left": "34%"},
+            {"label": "WN", "name": "Wanjiku", "status": "all clear", "tone": "teal", "top": "74%", "left": "57%"},
+            {"label": "OD", "name": "Odhiambo", "status": "overdue", "tone": "amber", "top": "60%", "left": "80%"},
+        ],
+        "status_cards": [
+            {"name": "Mwangi Farm", "cows": "22", "due_soon": "6", "alerts": "3 active", "badge": "2 urgent", "tone": "rose"},
+            {"name": "Kamau Farm", "cows": "15", "due_soon": "2", "alerts": "1 active", "badge": "Monitoring", "tone": "amber"},
+            {"name": "Odhiambo Farm", "cows": "18", "due_soon": "3", "alerts": "1 active", "badge": "Overdue case", "tone": "amber"},
+            {"name": "Ngugi Farm", "cows": "11", "due_soon": "0", "alerts": "None", "badge": "All clear", "tone": "teal"},
+        ],
+    }
+
+
+def _build_medical_record_cards():
+    return [
+        {"title": "Rosa #011", "detail": "Labour follow-up timeline, intervention summary, and escalation notes.", "status": "Open case", "tone": "rose"},
+        {"title": "Bella #004", "detail": "Treatment renewal review with withholding guidance recorded.", "status": "Follow-up", "tone": "amber"},
+        {"title": "Nuru #025", "detail": "CBC and milk panel results waiting for sign-off and farmer sharing.", "status": "Lab linked", "tone": "navy"},
+    ]
+
+
 def _build_common_context(request, *, page_title, page_eyebrow, page_heading, page_intro):
     profile = get_or_create_profile(request.user)
     display_name = request.user.get_full_name().strip() or request.user.username
     initials = "".join(part[0].upper() for part in display_name.split()[:2] if part) or "VT"
     return {
         "dashboard_home_url": get_dashboard_url_for_user(request.user, fallback="/dashboard/profile/"),
+        "back_to_website_url": reverse("Core_Web:home"),
+        "ai_workspace_url": reverse("cow_calving_ai:index"),
+        "ai_workspace_embed_url": f"{reverse('cow_calving_ai:index')}?embedded=1",
         "profile": profile,
         "display_name": display_name,
         "vet_initials": initials,
         "professional_id_display": profile.professional_id or "KE-VET-4921",
+        "dashboard_greeting": _build_dashboard_greeting(),
         "page_title": page_title,
         "page_eyebrow": page_eyebrow,
         "page_heading": page_heading,
         "page_intro": page_intro,
-        "primary_navigation": _build_primary_navigation(),
-        "secondary_navigation": _build_secondary_navigation(),
+        "navigation_sections": _build_navigation_sections(),
         "workspace_menu_sections": _build_workspace_menu(),
+        "header_primary_action": {
+            "label": "New case update",
+            "url": reverse("veterinary_dashboard:patients"),
+        },
     }
 
 
@@ -463,10 +672,12 @@ def dashboard_view(request):
     context.update(
         {
             "summary_cards": _build_summary_cards(),
-            "urgent_case": _build_priority_actions()[0],
-            "visit_cards": _build_visit_cards(),
-            "review_cards": _build_priority_actions()[1:] + [{"title": "Lab results waiting", "detail": "Three lab reviews still need sign-off before farmer sharing.", "meta": "Review queue", "tone": "amber"}],
-            "farm_overview": _build_farm_overview(),
+            "overview_schedule_rows": _build_overview_schedule_rows(),
+            # Keep the overview data intentionally compact so the dashboard
+            # stays close to the shared mockup and leaves deeper workflows for
+            # dedicated pages like patients, schedule, and farms.
+            "overview_case_rows": _build_overview_case_rows(),
+            "dashboard_quick_links": _build_dashboard_quick_links(),
         }
     )
     return render(request, "veterinary_dashboard/dashboard.html", context)
@@ -496,25 +707,25 @@ def farms_view(request):
         _build_workspace_page_context(
             request,
             page_title="Veterinary Farms | CowCalving",
-            page_eyebrow="Assigned farms",
-            page_heading="Review farm risk",
-            page_intro="Keep coverage and priority in one place.",
-            page_focus={"label": "Farms", "title": "See farm risk clearly", "text": "Review assigned farms here instead of repeating risk across the dashboard.", "badges": ["Risk first", "Assigned only", "Clear priorities"]},
+            page_eyebrow="My farms",
+            page_heading="Manage assigned farms",
+            page_intro="Keep the farm list short, scannable, and ready for a quick open when a route decision matters.",
+            page_focus={"label": "My Farms", "title": "See farm risk clearly", "text": "This page keeps farm counts, due-soon work, and alert level in one controlled list.", "badges": ["Assigned only", "Risk first", "Open details when needed"]},
             page_quick_actions=[
-                {"label": "Open schedule", "description": "Compare risk with today's route.", "url": reverse("veterinary_dashboard:schedule")},
-                {"label": "Open analytics", "description": "View wider disease patterns.", "url": reverse("veterinary_dashboard:analytics")},
-                {"label": "Open telehealth", "description": "Open farm-related messages.", "url": reverse("veterinary_dashboard:telehealth")},
+                {"label": "Open farm map", "description": "Switch to the region view when routing matters more than the list.", "url": reverse("veterinary_dashboard:farm_map")},
+                {"label": "Open schedule", "description": "Compare farm risk with today's visits.", "url": reverse("veterinary_dashboard:schedule")},
+                {"label": "Open active case", "description": "Jump into the case that needs action next.", "url": reverse("veterinary_dashboard:patients")},
             ],
-            main_section={"label": "Farm overview", "title": "Assigned farms and risk level", "cards": farm_cards},
+            main_section={"label": "Assigned farms", "title": "Farm list and alert level", "cards": farm_cards},
             support_section={"label": "Design rule", "title": "Why farms should be separate", "cards": [
-                {"title": "Avoid duplicate context", "detail": "Farm location, alerts, and risk should be read once here, not repeated on every dashboard block.", "status": "Lower cognitive load", "tone": "navy"},
-                {"title": "Support routing decisions", "detail": "This page works better when paired with schedule instead of squeezing route logic into the home page.", "status": "Better planning", "tone": "teal"},
-                {"title": "Prepare for future detail", "detail": "As real farm models arrive, this page can grow into notes, herd size, and coverage history.", "status": "Expandable", "tone": "amber"},
+                {"title": "Avoid duplicate context", "detail": "Farm location, alerts, and counts are easier to read once here than on every page.", "status": "Lower cognitive load", "tone": "navy"},
+                {"title": "Support routing decisions", "detail": "Pair this page with the farm map or schedule instead of crowding the overview.", "status": "Better planning", "tone": "teal"},
+                {"title": "Hackathon-ready scope", "detail": "The list stays compact now and can expand into notes or coverage history later.", "status": "Expandable", "tone": "amber"},
             ]},
             extra_section={"label": "Connected workflows", "title": "Pages that use this farm context", "cards": [
-                {"title": "Patients", "detail": "Open case and cow-specific files after choosing a farm.", "url": reverse("veterinary_dashboard:patients")},
-                {"title": "Labs", "detail": "Review test results linked to farm-level health concerns.", "url": reverse("veterinary_dashboard:labs")},
-                {"title": "Analytics", "detail": "Move from individual farm risk to region-wide patterns.", "url": reverse("veterinary_dashboard:analytics")},
+                {"title": "Active Case", "detail": "Open the current cow case after choosing the farm context.", "url": reverse("veterinary_dashboard:patients")},
+                {"title": "Farm Map", "detail": "Switch to the region view for route and urgency context.", "url": reverse("veterinary_dashboard:farm_map")},
+                {"title": "Medical Records", "detail": "Review recent farm-linked treatment and lab history.", "url": reverse("veterinary_dashboard:medical_records")},
             ]},
         ),
     )
@@ -526,10 +737,10 @@ def patients_view(request):
     patient_records = _build_patient_records()
     context = _build_common_context(
         request,
-        page_title="Veterinary Patients | CowCalving",
-        page_eyebrow="Patient files",
-        page_heading="Work from patient files",
-        page_intro="Open one case at a time, review the history, and move only to the next needed action.",
+        page_title="Veterinary Active Case | CowCalving",
+        page_eyebrow="Active case",
+        page_heading="Work from one active case at a time",
+        page_intro="Keep the case queue short, open one animal, and make the next action obvious for the vet.",
     )
     context.update(
         {
@@ -540,14 +751,62 @@ def patients_view(request):
                 {"label": "Lab linked", "value": "1"},
             ],
             "patient_page_notes": [
-                "Use the patient list to move straight into the one case that needs attention.",
-                "Keep diagnosis, labs, and prescriptions linked out instead of mixing everything into one long page.",
-                "Save short note drafts locally during the demo before capturing the final assessment.",
+                "Open one case, act, then come back for the next one.",
+                "Keep telehealth, diagnosis, and routing behind action buttons so the page stays controlled.",
+                "Save a short local note first, then move to the next workflow only if needed.",
             ],
             "patient_seed_record": patient_records[0],
         }
     )
     return render(request, "veterinary_dashboard/patients.html", context)
+
+
+@login_required
+@role_required("veterinary")
+def farm_map_view(request):
+    context = _build_common_context(
+        request,
+        page_title="Veterinary Farm Map | CowCalving",
+        page_eyebrow="Farm map",
+        page_heading="Read the region at a glance",
+        page_intro="Use the map only when the route or farm priority needs a wider view than the overview can show.",
+    )
+    context.update(_build_farm_map_context())
+    return render(request, "veterinary_dashboard/farm_map.html", context)
+
+
+@login_required
+@role_required("veterinary")
+def medical_records_view(request):
+    record_cards = _build_medical_record_cards()
+    return render(
+        request,
+        "veterinary_dashboard/workspace_page.html",
+        _build_workspace_page_context(
+            request,
+            page_title="Veterinary Medical Records | CowCalving",
+            page_eyebrow="Medical records",
+            page_heading="Review concise case history",
+            page_intro="Keep treatment history, lab summaries, and recent case notes accessible without crowding the live workflow pages.",
+            page_focus={"label": "Medical Records", "title": "Review what happened before acting", "text": "This page is for recent records and continuity, not day-of triage.", "badges": ["History first", "Search next", "Controlled access"]},
+            page_quick_actions=[
+                {"label": "Open active case", "description": "Return to the live case when a history check is enough.", "url": reverse("veterinary_dashboard:patients")},
+                {"label": "Open labs", "description": "Review full lab detail when the summary is not enough.", "url": reverse("veterinary_dashboard:labs")},
+                {"label": "Open prescriptions", "description": "Check treatment planning after reviewing the record.", "url": reverse("veterinary_dashboard:prescriptions")},
+            ],
+            main_section={"label": "Recent records", "title": "Cases and summaries worth revisiting", "cards": record_cards},
+            support_section={"label": "Why it matters", "title": "What this page keeps out of the overview", "cards": [
+                {"title": "Less homepage clutter", "detail": "Treatment detail belongs here so the overview stays decision-focused.", "status": "Cleaner dashboard", "tone": "teal"},
+                {"title": "Faster continuity", "detail": "The vet can reopen recent history before making a fresh call or visit.", "status": "Better context", "tone": "navy"},
+                {"title": "Hackathon-safe scope", "detail": "A concise records page demos real value without building a full hospital system.", "status": "Demo ready", "tone": "amber"},
+            ]},
+            extra_section={"label": "Connected pages", "title": "What usually follows record review", "cards": [
+                {"title": "Active Case", "detail": "Jump into the current case after reviewing the history.", "url": reverse("veterinary_dashboard:patients")},
+                {"title": "Schedule", "detail": "Open the route if a follow-up visit is needed.", "url": reverse("veterinary_dashboard:schedule")},
+                {"title": "Farm Map", "detail": "View the wider farm context if the pattern spans more than one farm.", "url": reverse("veterinary_dashboard:farm_map")},
+            ]},
+        ),
+    )
 
 
 @login_required

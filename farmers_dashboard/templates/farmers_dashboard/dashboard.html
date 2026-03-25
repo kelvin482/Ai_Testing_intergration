@@ -1,121 +1,107 @@
 {% extends "farmers_dashboard/base_dashboard.html" %}
 
-{% block farmer_highlight_heading %}Overview first, detail pages second{% endblock %}
-{% block farmer_highlight_text %}
-    The dashboard home now works as a professional summary page. Herd records, alerts, and reports have their own routes so the farmer experience feels simpler instead of crowded.
-{% endblock %}
-
 {% block farmer_dashboard_content %}
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {% for item in summary_cards %}
-            <article class="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-[0_16px_40px_rgba(148,163,184,0.16)]">
-                <div class="flex items-center justify-between gap-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ item.label }}</p>
-                    <span class="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] {% if item.tone == 'emerald' %}bg-emerald-100 text-emerald-700{% elif item.tone == 'amber' %}bg-amber-100 text-amber-700{% elif item.tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-slate-100 text-slate-700{% endif %}">
-                        Live
-                    </span>
-                </div>
-                <p class="mt-4 text-3xl font-bold tracking-tight text-slate-950">{{ item.value }}</p>
-                <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.detail }}</p>
+    <section class="grid gap-4 lg:grid-cols-3 xl:grid-cols-4">
+        {% for card in summary_cards %}
+            <article class="rounded-[1.7rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <p class="text-sm text-slate-600">{{ card.label }}</p>
+                <p class="mt-3 text-4xl leading-none tracking-tight {% if card.tone == 'rose' %}text-rose-500{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-600{% else %}text-[#123d6a]{% endif %}">
+                    {{ card.value }}
+                </p>
+                <p class="mt-2 text-sm text-slate-600">{{ card.detail }}</p>
             </article>
         {% endfor %}
     </section>
 
-    <section class="grid gap-4 2xl:grid-cols-[1.1fr_0.9fr]">
-        <article class="rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_18px_48px_rgba(148,163,184,0.14)] sm:p-7">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Core sections</p>
-                    <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">The farmer dashboard map</h2>
-                    <p class="mt-2 text-sm leading-7 text-slate-600">
-                        Each major workflow now has its own page, which makes the templates easier to read and gives us room to expand each area later.
-                    </p>
-                </div>
-                <a href="{% url 'users:profile_edit' %}" class="inline-flex items-center justify-center rounded-[1.25rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900 transition hover:bg-emerald-100">
-                    Update profile setup
+    <section class="grid gap-6 xl:grid-cols-[1.05fr_1fr]">
+        <article class="rounded-[1.9rem] border border-slate-200 bg-white px-6 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="text-2xl text-slate-950 font-display">Due this week</h2>
+                <a href="{% url 'farmers_dashboard:herd' %}" class="text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                    Open herd
                 </a>
             </div>
 
-            <div class="mt-6 grid gap-4 xl:grid-cols-2">
-                <a href="{% url 'farmers_dashboard:herd' %}" class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5 transition hover:border-emerald-200 hover:bg-emerald-50">
-                    <p class="text-sm font-semibold text-slate-950">Herd workspace</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Keep animal records, lifecycle notes, and future cow-specific modules in a dedicated page.</p>
-                </a>
-                <a href="{% url 'farmers_dashboard:alerts' %}" class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5 transition hover:border-amber-200 hover:bg-amber-50">
-                    <p class="text-sm font-semibold text-slate-950">Alerts center</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Separate urgent and planned follow-up so the home page does not carry every warning at once.</p>
-                </a>
-                <a href="{% url 'farmers_dashboard:reports' %}" class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5 transition hover:border-sky-200 hover:bg-sky-50">
-                    <p class="text-sm font-semibold text-slate-950">Reports and trends</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Give charts, rankings, and performance summaries their own professional presentation space.</p>
-                </a>
-                <a href="{% url 'cow_calving_ai:index' %}" class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5 transition hover:border-slate-300 hover:bg-slate-100">
-                    <p class="text-sm font-semibold text-slate-950">AI workspace</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Leave the assistant as a dedicated tool instead of mixing long conversations into the dashboard template.</p>
-                </a>
-            </div>
-        </article>
-
-        <article class="rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_18px_48px_rgba(148,163,184,0.14)] sm:p-7">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Why this is clearer</p>
-            <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">A simpler structure for future work</h2>
             <div class="mt-6 space-y-4">
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
-                    <p class="text-sm font-semibold text-slate-950">Reusable layout</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">The farmer app now has one shared base template and one shared sidebar instead of repeating layout markup in every file.</p>
-                </div>
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
-                    <p class="text-sm font-semibold text-slate-950">Focused routes</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Overview, herd, alerts, and reports now each have their own URL so each page can grow without becoming difficult to scan.</p>
-                </div>
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4">
-                    <p class="text-sm font-semibold text-slate-950">Honest placeholder areas</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Where herd data models do not exist yet, the UI is framed as layout-ready preview content instead of pretending the backend already exists.</p>
-                </div>
-            </div>
-        </article>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <article class="rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_18px_48px_rgba(148,163,184,0.14)] sm:p-7">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Account snapshot</p>
-            <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">Profile data that drives the workspace</h2>
-            <div class="mt-6 space-y-3">
-                {% for item in profile_readiness_items %}
-                    <div class="flex flex-col gap-2 rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p class="text-sm font-semibold text-slate-950">{{ item.label }}</p>
-                            <p class="mt-1 text-sm text-slate-600">{{ item.value }}</p>
+                {% for cow in due_soon_cows %}
+                    <div class="grid gap-3 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[5.5rem_minmax(0,1fr)_auto] md:items-center">
+                        <p class="text-xl tracking-tight text-slate-950 font-display">{{ cow.cow_id }}</p>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">{{ cow.name }}</p>
+                            <p class="mt-1 text-base leading-6 text-slate-900">{{ cow.detail }}</p>
                         </div>
-                        <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] {% if item.is_complete %}bg-emerald-100 text-emerald-700{% else %}bg-amber-100 text-amber-700{% endif %}">
-                            {% if item.is_complete %}Saved{% else %}Needs update{% endif %}
+                        <span class="inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                            {{ cow.status }}
                         </span>
                     </div>
                 {% endfor %}
             </div>
         </article>
 
-        <article class="rounded-[2rem] border border-white/70 bg-white p-6 shadow-[0_18px_48px_rgba(148,163,184,0.14)] sm:p-7">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Next slices</p>
-            <h2 class="mt-2 text-2xl font-bold tracking-tight text-slate-950">The easiest next improvements</h2>
-            <div class="mt-6 grid gap-3 md:grid-cols-2">
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-                    <p class="text-sm font-semibold text-slate-950">Real herd models</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Connect the herd page to actual cow, milk, breeding, and health records.</p>
-                </div>
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-                    <p class="text-sm font-semibold text-slate-950">Actionable alerts</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Replace preview cards with alert rules, timestamps, and workflow ownership.</p>
-                </div>
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-                    <p class="text-sm font-semibold text-slate-950">Live reporting</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Feed report cards from the same data source used by herd records and AI insights.</p>
-                </div>
-                <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-                    <p class="text-sm font-semibold text-slate-950">Role-polished styling</p>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">Once the farmer experience is locked, the veterinary dashboard can adopt its own matching layout system.</p>
-                </div>
+        <article class="rounded-[1.9rem] border border-slate-200 bg-white px-6 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+            <div class="flex items-center justify-between gap-3">
+                <h2 class="text-2xl text-slate-950 font-display">Recent alerts</h2>
+                <a href="{% url 'farmers_dashboard:alerts' %}" class="text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                    View all alerts
+                </a>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                {% for alert in recent_alert_feed %}
+                    <div class="grid gap-3 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0 md:grid-cols-[auto_minmax(0,1fr)]">
+                        <span class="mt-2 h-3 w-3 rounded-full {% if alert.tone == 'rose' %}bg-rose-500{% elif alert.tone == 'amber' %}bg-amber-400{% else %}bg-emerald-500{% endif %}"></span>
+                        <div class="min-w-0">
+                            <p class="text-base leading-6 text-slate-900">{{ alert.title }}</p>
+                            <p class="text-sm leading-6 text-slate-600">{{ alert.detail }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </article>
+    </section>
+
+    <section class="rounded-[1.9rem] border border-slate-200 bg-white px-6 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-2xl text-slate-950 font-display">Quick actions</h2>
+            <span class="text-sm text-slate-500">Open only what you need</span>
+        </div>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+            {% for item in farmer_quick_actions %}
+                <a href="{{ item.url }}" class="block rounded-[1.5rem] border border-slate-200 bg-[#fbfcff] p-5 transition hover:border-slate-300">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-lg text-slate-950 font-display">{{ item.label }}</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.detail }}</p>
+                        </div>
+                        <span class="pt-1 text-slate-300">&rsaquo;</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="rounded-[1.9rem] border border-slate-200 bg-white px-6 py-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="text-2xl text-slate-950 font-display">More information</h2>
+            <span class="text-sm text-slate-500">Open only when needed</span>
+        </div>
+
+        <div class="mt-6 grid gap-4 lg:grid-cols-3">
+            {% for item in dashboard_quick_links %}
+                <article class="rounded-[1.5rem] border border-slate-200 bg-[#fbfcff] p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-lg text-slate-950 font-display">{{ item.label }}</p>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ item.description }}</p>
+                        </div>
+                        <span class="pt-1 text-slate-300">&rsaquo;</span>
+                    </div>
+                    <a href="{{ item.url }}" class="mt-4 inline-flex text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                        Open page
+                    </a>
+                </article>
+            {% endfor %}
+        </div>
     </section>
 {% endblock %}

@@ -34,11 +34,19 @@ class VeterinaryDashboardViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Veterinary Dashboard")
+        self.assertContains(response, "Overview")
+        self.assertContains(response, "Active Case")
+        self.assertContains(response, "Farm Map")
+        self.assertContains(response, "My Farms")
+        self.assertContains(response, "Medical Records")
         self.assertContains(response, "Workspace")
-        self.assertContains(response, "Dashboard")
         self.assertContains(response, "My Profile")
         self.assertContains(response, "AI Workspace")
         self.assertContains(response, "Sign out")
+        self.assertContains(response, "Back to website")
+        self.assertContains(response, "Logout")
+        self.assertContains(response, "AI workspace")
+        self.assertContains(response, 'data-dashboard-ai-expand', html=False)
         self.assertContains(response, '<form method="post" action="/accounts/logout/">', html=False)
         self.assertNotContains(response, 'href="/accounts/logout/"', html=False)
 
@@ -63,6 +71,8 @@ class VeterinaryDashboardViewTests(TestCase):
         self.client.force_login(self.user)
 
         routes = [
+            reverse("veterinary_dashboard:farm_map"),
+            reverse("veterinary_dashboard:medical_records"),
             reverse("veterinary_dashboard:schedule"),
             reverse("veterinary_dashboard:farms"),
             reverse("veterinary_dashboard:patients"),
@@ -98,8 +108,10 @@ class VeterinaryDashboardViewTests(TestCase):
         response = self.client.get(reverse("veterinary_dashboard:patients"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Patient queue")
-        self.assertContains(response, "Cases that need action")
-        self.assertContains(response, "Selected case")
+        self.assertContains(response, "Active case queue")
+        self.assertContains(response, "Cases ready for action")
+        self.assertContains(response, "Selected active case")
+        self.assertContains(response, "Progress tracker")
+        self.assertContains(response, "AI recommendation")
         self.assertContains(response, "Draft note for this case")
         self.assertContains(response, 'id="patient-list"', html=False)

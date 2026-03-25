@@ -6,9 +6,9 @@
             <div class="flex flex-col gap-4 border-b border-emerald-100 pb-5">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Patient queue</p>
-                        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Cases that need action</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">Keep the list short, open one case, then move only to the next required page.</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Active case queue</p>
+                        <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Cases ready for action</h2>
+                        <p class="mt-2 text-sm leading-6 text-slate-600">Pick one case, finish the next action, then return for the next case.</p>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
                         {% for stat in patient_stats %}
@@ -41,14 +41,28 @@
         <article class="rounded-[1.75rem] border border-emerald-100 bg-white/95 p-6 shadow-[0_14px_36px_rgba(116,145,132,0.12)] sm:p-7">
             <div class="flex flex-col gap-4 border-b border-emerald-100 pb-5 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Selected case</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Selected active case</p>
                     <h2 id="patient-name" class="mt-2 text-3xl font-semibold tracking-tight text-slate-950">{{ patient_seed_record.name }}</h2>
                     <p id="patient-summary" class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{{ patient_seed_record.summary }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <span id="patient-status" class="inline-flex items-center justify-center rounded-full bg-rose-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-rose-700">{{ patient_seed_record.status }}</span>
+                    <span id="patient-banner" class="inline-flex items-center justify-center rounded-full bg-rose-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-rose-700">{{ patient_seed_record.status_banner }}</span>
+                    <span id="patient-status" class="inline-flex items-center justify-center rounded-full bg-rose-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-rose-700">{{ patient_seed_record.status }}</span>
                     <span id="patient-last-update" class="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600">{{ patient_seed_record.last_update }}</span>
                 </div>
+            </div>
+
+            <div class="mt-5 rounded-[1.2rem] border border-emerald-100 bg-emerald-50/35 p-5">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Case stage</p>
+                        <h3 class="mt-2 text-xl font-semibold tracking-tight text-slate-950">Progress tracker</h3>
+                    </div>
+                    <a href="{% url 'veterinary_dashboard:schedule' %}" class="inline-flex items-center justify-center rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                        Open route
+                    </a>
+                </div>
+                <div id="patient-stage-list" class="mt-5 grid gap-2 md:grid-cols-5"></div>
             </div>
 
             <div class="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
@@ -57,13 +71,13 @@
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Identity</p>
-                                <p id="patient-meta" class="mt-2 text-sm leading-6 text-slate-700">{{ patient_seed_record.farm }} · {{ patient_seed_record.owner }} · {{ patient_seed_record.location }}</p>
+                                <p id="patient-meta" class="mt-2 text-sm leading-6 text-slate-700">{{ patient_seed_record.farm }} - {{ patient_seed_record.owner }} - {{ patient_seed_record.location }}</p>
                                 <p id="patient-issue" class="mt-2 text-lg font-semibold text-slate-950">{{ patient_seed_record.issue }}</p>
                                 <p id="patient-next-step" class="mt-2 text-sm leading-6 text-slate-600">{{ patient_seed_record.next_step }}</p>
                             </div>
                             <div class="rounded-[1rem] border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-600">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Tag / Breed</p>
-                                <p id="patient-tag-breed" class="mt-2 font-semibold text-slate-950">#{{ patient_seed_record.tag_number }} · {{ patient_seed_record.breed }}</p>
+                                <p id="patient-tag-breed" class="mt-2 font-semibold text-slate-950">#{{ patient_seed_record.tag_number }} - {{ patient_seed_record.breed }}</p>
                             </div>
                         </div>
                     </div>
@@ -73,11 +87,11 @@
                     <div class="rounded-[1.2rem] border border-emerald-100 bg-white p-5">
                         <div class="flex items-center justify-between gap-4">
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Case history</p>
+                                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Intervention log</p>
                                 <h3 class="mt-2 text-xl font-semibold tracking-tight text-slate-950">Recent timeline</h3>
                             </div>
-                            <a href="{% url 'veterinary_dashboard:schedule' %}" class="inline-flex items-center justify-center rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
-                                View schedule
+                            <a href="{% url 'veterinary_dashboard:medical_records' %}" class="inline-flex items-center justify-center rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                                Open records
                             </a>
                         </div>
                         <div id="patient-history" class="mt-5 space-y-3"></div>
@@ -85,9 +99,29 @@
                 </section>
 
                 <section class="space-y-4">
+                    <div class="rounded-[1.2rem] border border-rose-100 bg-rose-50/40 p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-rose-700">Medical note</p>
+                        <p id="patient-medical-note" class="mt-3 text-sm leading-7 text-slate-700">{{ patient_seed_record.medical_note }}</p>
+                    </div>
+
+                    <div class="rounded-[1.2rem] border border-emerald-100 bg-white p-5">
+                        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Medications on hand</p>
+                        <div id="patient-medications" class="mt-4 flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="rounded-[1.2rem] border border-sky-100 bg-sky-50/45 p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">AI recommendation</p>
+                                <p id="patient-ai-recommendation" class="mt-3 text-sm leading-7 text-slate-700">{{ patient_seed_record.ai_recommendation }}</p>
+                            </div>
+                            <span class="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700">Decision support</span>
+                        </div>
+                    </div>
+
                     <div class="rounded-[1.2rem] border border-emerald-100 bg-white p-5">
                         <p class="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">Next actions</p>
-                        <h3 class="mt-2 text-xl font-semibold tracking-tight text-slate-950">Open only what is needed</h3>
+                        <h3 class="mt-2 text-xl font-semibold tracking-tight text-slate-950">Stay in control of the next step</h3>
                         <div class="mt-5 grid gap-3">
                             <a id="patient-primary-action" href="{{ patient_seed_record.primary_url }}" class="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#1e6f5c,#2f8a6d)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105">{{ patient_seed_record.primary_label }}</a>
                             <a id="patient-secondary-action" href="{{ patient_seed_record.secondary_url }}" class="inline-flex items-center justify-center rounded-full border border-emerald-200 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50">{{ patient_seed_record.secondary_label }}</a>
@@ -99,7 +133,7 @@
                         <div class="flex items-start justify-between gap-4">
                             <div>
                                 <p class="text-sm font-semibold text-slate-950">Draft note for this case</p>
-                                <p class="mt-1 text-sm leading-6 text-slate-600">Keep a short note here during the demo before saving the final diagnosis.</p>
+                                <p class="mt-1 text-sm leading-6 text-slate-600">Keep a short note here during the demo before saving the final diagnosis or update.</p>
                             </div>
                             <span class="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Local</span>
                         </div>
@@ -115,7 +149,7 @@
                     </div>
 
                     <div class="rounded-[1.2rem] border border-emerald-100 bg-white p-5">
-                        <p class="text-sm font-semibold text-slate-950">Keep this page simple</p>
+                        <p class="text-sm font-semibold text-slate-950">Keep this page controlled</p>
                         <ul class="mt-3 space-y-2 text-sm leading-6 text-slate-600">
                             {% for note in patient_page_notes %}
                                 <li class="flex items-start gap-2">
@@ -150,14 +184,19 @@
 
             const nameEl = document.getElementById('patient-name');
             const summaryEl = document.getElementById('patient-summary');
+            const bannerEl = document.getElementById('patient-banner');
             const statusEl = document.getElementById('patient-status');
             const lastUpdateEl = document.getElementById('patient-last-update');
             const metaEl = document.getElementById('patient-meta');
             const issueEl = document.getElementById('patient-issue');
             const nextStepEl = document.getElementById('patient-next-step');
             const tagBreedEl = document.getElementById('patient-tag-breed');
+            const stageListEl = document.getElementById('patient-stage-list');
             const statsEl = document.getElementById('patient-stats');
             const historyEl = document.getElementById('patient-history');
+            const medicalNoteEl = document.getElementById('patient-medical-note');
+            const medicationsEl = document.getElementById('patient-medications');
+            const aiRecommendationEl = document.getElementById('patient-ai-recommendation');
             const primaryActionEl = document.getElementById('patient-primary-action');
             const secondaryActionEl = document.getElementById('patient-secondary-action');
             const extraActionEl = document.getElementById('patient-extra-action');
@@ -219,7 +258,7 @@
                 if (!filtered.length) {
                     listContainer.innerHTML = `
                         <div class="rounded-[1rem] border border-dashed border-emerald-200 bg-emerald-50/35 px-4 py-5 text-sm text-slate-600">
-                            No patient files match this search yet.
+                            No active cases match this search yet.
                         </div>
                     `;
                     renderDetail(null);
@@ -234,7 +273,7 @@
                                     <p class="text-base font-semibold text-slate-950">${patient.name}</p>
                                     <span class="rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${toneClasses(patient.tone)}">${patient.status}</span>
                                 </div>
-                                <p class="mt-2 text-sm leading-6 text-slate-600">${patient.issue} · ${patient.farm} · ${patient.owner}</p>
+                                <p class="mt-2 text-sm leading-6 text-slate-600">${patient.issue} - ${patient.farm} - ${patient.owner}</p>
                                 <p class="mt-1 text-sm leading-6 text-slate-500">${patient.summary}</p>
                             </div>
                             <span class="pt-0.5 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">${patient.last_update}</span>
@@ -249,6 +288,8 @@
                 if (!patient) {
                     nameEl.textContent = 'No case selected';
                     summaryEl.textContent = 'Choose a patient file from the list.';
+                    bannerEl.textContent = 'Queue empty';
+                    bannerEl.className = 'inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600';
                     statusEl.textContent = 'Queue empty';
                     statusEl.className = 'inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-600';
                     lastUpdateEl.textContent = '';
@@ -256,14 +297,18 @@
                     issueEl.textContent = '';
                     nextStepEl.textContent = '';
                     tagBreedEl.textContent = '';
+                    stageListEl.innerHTML = '';
                     statsEl.innerHTML = '';
                     historyEl.innerHTML = '';
+                    medicalNoteEl.textContent = '';
+                    medicationsEl.innerHTML = '';
+                    aiRecommendationEl.textContent = '';
                     primaryActionEl.href = '#';
                     secondaryActionEl.href = '#';
                     extraActionEl.href = '#';
-                    primaryActionEl.textContent = 'Open diagnosis';
-                    secondaryActionEl.textContent = 'Open telehealth';
-                    extraActionEl.textContent = 'View schedule';
+                    primaryActionEl.textContent = 'Log update';
+                    secondaryActionEl.textContent = 'Call farmer';
+                    extraActionEl.textContent = 'Open route';
                     noteInput.value = '';
                     noteInput.disabled = true;
                     noteStatus.textContent = 'No draft available.';
@@ -272,13 +317,21 @@
 
                 nameEl.textContent = patient.name;
                 summaryEl.textContent = patient.summary;
+                bannerEl.textContent = patient.status_banner || patient.status;
+                bannerEl.className = `inline-flex items-center justify-center rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] ${toneClasses(patient.tone)}`;
                 statusEl.textContent = patient.status;
                 statusEl.className = `inline-flex items-center justify-center rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.24em] ${toneClasses(patient.tone)}`;
                 lastUpdateEl.textContent = patient.last_update;
-                metaEl.textContent = `${patient.farm} · ${patient.owner} · ${patient.location}`;
+                metaEl.textContent = `${patient.farm} - ${patient.owner} - ${patient.location}`;
                 issueEl.textContent = patient.issue;
                 nextStepEl.textContent = patient.next_step;
-                tagBreedEl.textContent = `#${patient.tag_number} · ${patient.breed}`;
+                tagBreedEl.textContent = `#${patient.tag_number} - ${patient.breed}`;
+
+                stageListEl.innerHTML = patient.care_stages.map((stage, index) => `
+                    <div class="rounded-[1rem] border px-3 py-3 ${index <= patient.current_stage ? 'border-emerald-200 bg-white text-slate-900' : 'border-transparent bg-emerald-100/55 text-slate-500'}">
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] ${index === patient.current_stage ? 'text-rose-700' : 'text-slate-500'}">${stage}</p>
+                    </div>
+                `).join('');
 
                 statsEl.innerHTML = patient.stats.map((stat) => `
                     <div class="rounded-[1rem] border border-emerald-100 bg-white px-4 py-4">
@@ -298,6 +351,12 @@
                         </div>
                     </div>
                 `).join('');
+
+                medicalNoteEl.textContent = patient.medical_note || '';
+                medicationsEl.innerHTML = (patient.medications || []).map((item) => `
+                    <span class="inline-flex rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">${item}</span>
+                `).join('');
+                aiRecommendationEl.textContent = patient.ai_recommendation || '';
 
                 primaryActionEl.href = patient.primary_url;
                 primaryActionEl.textContent = patient.primary_label;

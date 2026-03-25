@@ -1,0 +1,181 @@
+<!-- Shared dashboard assistant launcher: both farmer and vet dashboards mount
+     the same floating AI workspace so the UX stays consistent. -->
+<div
+    class="pointer-events-none fixed inset-0 z-40"
+    data-dashboard-ai-root
+    data-ai-url="{{ ai_workspace_url }}"
+    data-ai-embed-url="{{ ai_workspace_embed_url }}"
+>
+    <button
+        type="button"
+        class="pointer-events-auto fixed bottom-6 right-6 inline-flex items-center gap-3 rounded-full bg-[linear-gradient(135deg,#8f4e17,#b06b2f)] px-4 py-3 text-sm font-semibold text-white shadow-[0_22px_45px_rgba(143,78,23,0.32)] transition hover:-translate-y-0.5 hover:brightness-105"
+        data-dashboard-ai-open
+        aria-haspopup="dialog"
+        aria-expanded="false"
+    >
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-white/12">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M10 3.5c3.59 0 6.5 2.58 6.5 5.75S13.59 15 10 15H7.2L4.5 17v-3.05C3.58 12.91 3.5 11.9 3.5 9.25 3.5 6.08 6.41 3.5 10 3.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path>
+                <path d="M7 9.25h6M7 11.75h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+            </svg>
+        </span>
+        <span class="hidden sm:block">AI workspace</span>
+    </button>
+
+    <div class="pointer-events-none fixed inset-0 hidden bg-slate-950/30 backdrop-blur-[2px]" data-dashboard-ai-backdrop></div>
+
+    <section
+        class="pointer-events-none fixed bottom-6 right-6 hidden flex w-[min(35rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[2rem] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdf8_0%,#f7f0e7_100%)] shadow-[0_30px_80px_rgba(15,23,42,0.24)] transition-all duration-300 sm:w-[min(38rem,calc(100vw-3rem))]"
+        data-dashboard-ai-panel
+        role="dialog"
+        aria-modal="true"
+        aria-label="AI workspace"
+    >
+        <header class="flex items-center justify-between gap-4 border-b border-[#eadfce] bg-[linear-gradient(180deg,#fffdf8_0%,#faf3e8_100%)] px-5 py-4 sm:px-6">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Floating workspace</p>
+                <h2 class="mt-1 text-2xl text-slate-950 font-display">AI assistant</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    type="button"
+                    class="inline-flex items-center rounded-full border border-[#dccab0] bg-white/70 px-3.5 py-2 text-sm font-semibold text-[#7f4a1f] transition hover:border-[#caa57d] hover:bg-white"
+                    data-dashboard-ai-expand
+                >
+                    Open full page
+                </button>
+                <button
+                    type="button"
+                    class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dccab0] bg-white/60 text-slate-500 transition hover:border-slate-300 hover:bg-white hover:text-slate-700"
+                    data-dashboard-ai-close
+                    aria-label="Close AI workspace"
+                >
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                        <path d="M5 5 15 15M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="h-[min(76vh,46rem)] bg-[#f8f3ec] transition-all duration-300" data-dashboard-ai-body>
+            <iframe
+                class="h-full w-full border-0 bg-transparent"
+                title="AI workspace"
+                loading="lazy"
+                data-dashboard-ai-frame
+            ></iframe>
+        </div>
+    </section>
+</div>
+
+<script>
+    (() => {
+        const root = document.querySelector("[data-dashboard-ai-root]");
+        if (!root) {
+            return;
+        }
+
+        const openButton = root.querySelector("[data-dashboard-ai-open]");
+        const panel = root.querySelector("[data-dashboard-ai-panel]");
+        const backdrop = root.querySelector("[data-dashboard-ai-backdrop]");
+        const closeButton = root.querySelector("[data-dashboard-ai-close]");
+        const expandButton = root.querySelector("[data-dashboard-ai-expand]");
+        const body = root.querySelector("[data-dashboard-ai-body]");
+        const frame = root.querySelector("[data-dashboard-ai-frame]");
+        const aiUrl = root.dataset.aiUrl || "";
+        const aiEmbedUrl = root.dataset.aiEmbedUrl || aiUrl;
+        const compactPanelClasses = [
+            "bottom-6",
+            "right-6",
+            "w-[min(35rem,calc(100vw-1.5rem))]",
+            "sm:w-[min(38rem,calc(100vw-3rem))]",
+            "rounded-[2rem]",
+        ];
+        const expandedPanelClasses = [
+            "inset-4",
+            "w-auto",
+            "max-w-none",
+            "rounded-[2.2rem]",
+            "sm:inset-6",
+            "lg:inset-8",
+            "xl:inset-10",
+        ];
+        const compactBodyClasses = ["h-[min(76vh,46rem)]"];
+        const expandedBodyClasses = ["h-[calc(100vh-7.5rem)]", "sm:h-[calc(100vh-8.5rem)]"];
+        let hasLoadedFrame = false;
+        let isExpanded = false;
+
+        // The "full page" action is intentionally an in-page expansion so the
+        // user keeps dashboard context instead of being navigated away.
+        function syncExpandedState() {
+            panel.classList.toggle("bottom-6", !isExpanded);
+            panel.classList.toggle("right-6", !isExpanded);
+            compactPanelClasses.forEach((className) => panel.classList.toggle(className, !isExpanded));
+            expandedPanelClasses.forEach((className) => panel.classList.toggle(className, isExpanded));
+            compactBodyClasses.forEach((className) => body.classList.toggle(className, !isExpanded));
+            expandedBodyClasses.forEach((className) => body.classList.toggle(className, isExpanded));
+            expandButton.textContent = isExpanded ? "Compact view" : "Open full page";
+        }
+
+        function setVisibility(isOpen) {
+            backdrop.classList.toggle("hidden", !isOpen);
+            panel.classList.toggle("hidden", !isOpen);
+            backdrop.classList.toggle("pointer-events-auto", isOpen);
+            panel.classList.toggle("pointer-events-auto", isOpen);
+            openButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            if (isOpen && !hasLoadedFrame && aiEmbedUrl) {
+                frame.src = aiEmbedUrl;
+                hasLoadedFrame = true;
+            }
+            if (!isOpen && isExpanded) {
+                isExpanded = false;
+                syncExpandedState();
+            }
+        }
+
+        function openPanel() {
+            setVisibility(true);
+        }
+
+        function closePanel() {
+            setVisibility(false);
+        }
+
+        function toggleExpanded() {
+            isExpanded = !isExpanded;
+            syncExpandedState();
+        }
+
+        // Route dashboard AI links into the floating workspace, while leaving
+        // unrelated links to behave normally.
+        function shouldOpenInPanel(link) {
+            if (!(link instanceof HTMLAnchorElement)) {
+                return false;
+            }
+            const linkUrl = new URL(link.href, window.location.origin);
+            const aiPageUrl = new URL(aiUrl, window.location.origin);
+            return linkUrl.pathname === aiPageUrl.pathname;
+        }
+
+        syncExpandedState();
+        openButton.addEventListener("click", openPanel);
+        closeButton.addEventListener("click", closePanel);
+        expandButton.addEventListener("click", toggleExpanded);
+        backdrop.addEventListener("click", closePanel);
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closePanel();
+            }
+        });
+
+        document.addEventListener("click", (event) => {
+            const link = event.target.closest("a");
+            if (!shouldOpenInPanel(link)) {
+                return;
+            }
+            event.preventDefault();
+            openPanel();
+        });
+    })();
+</script>

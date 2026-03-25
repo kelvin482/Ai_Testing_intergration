@@ -9,97 +9,122 @@
         :root {
             color-scheme: light;
         }
+
+        body {
+            font-family: "Instrument Sans", "Segoe UI", sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        .font-display {
+            font-family: "Fraunces", Georgia, serif;
+        }
     </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen bg-[radial-gradient(circle_at_top,#eef7f0_0%,#e4efe7_36%,#d7e5dc_100%)] text-slate-900">
-    <div class="mx-auto max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8">
-        <div class="grid gap-4 xl:grid-cols-[18rem_minmax(0,1fr)]">
-            <aside class="overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-[0_28px_80px_rgba(15,23,42,0.35)]">
-                {% include "farmers_dashboard/includes/sidebar.html" %}
-            </aside>
+<body class="min-h-screen bg-[#f5f7fb] text-slate-900">
+    <div class="min-h-screen xl:grid xl:grid-cols-[18rem_minmax(0,1fr)]">
+        <aside class="bg-[linear-gradient(180deg,#0c2745_0%,#10345b_52%,#11273f_100%)] text-white shadow-[24px_0_60px_rgba(15,23,42,0.12)]">
+            {% include "farmers_dashboard/includes/sidebar.html" %}
+        </aside>
 
-            <div class="space-y-4">
-                <header class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_18px_48px_rgba(148,163,184,0.18)] backdrop-blur sm:p-8">
-                    <div class="flex flex-col gap-6 2xl:flex-row 2xl:items-center 2xl:justify-between">
-                        <div class="max-w-3xl">
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">{{ page_eyebrow }}</p>
-                            <h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{{ page_heading }}</h1>
-                            <p class="mt-4 text-sm leading-7 text-slate-600 sm:text-base">{{ page_intro }}</p>
-                        </div>
+        <div class="px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
+            <header class="mb-8 flex flex-col gap-4 border-b border-slate-200/80 pb-6 md:flex-row md:items-start md:justify-between">
+                <div class="max-w-3xl">
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{{ page_eyebrow }}</p>
+                    <h1 class="mt-3 text-3xl tracking-tight text-slate-950 sm:text-4xl">
+                        <span class="font-display">{{ dashboard_greeting }}</span>
+                    </h1>
+                    <p class="mt-2 text-sm font-medium uppercase tracking-[0.2em] text-slate-500">{{ page_heading }}</p>
+                    <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">{{ page_intro }}</p>
+                </div>
 
-                        <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[26rem]">
-                            <a href="{% url 'users:profile' %}" class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-4 transition hover:border-emerald-200 hover:bg-emerald-50">
-                                <span class="block text-sm font-semibold text-slate-900">Profile details</span>
-                                <span class="mt-1 block text-sm text-slate-600">Review the account and farm identity saved for this user.</span>
-                            </a>
-                            <form method="post" action="{% url 'accounts:logout' %}">
-                                {% csrf_token %}
-                                <button type="submit" class="flex h-full w-full items-center justify-center rounded-[1.5rem] bg-[linear-gradient(135deg,#14532d,#22c55e)] px-5 py-4 text-sm font-semibold text-white shadow-[0_16px_32px_rgba(34,197,94,0.24)] transition hover:brightness-105">
-                                    Logout
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </header>
+                <div class="flex flex-wrap items-start gap-3">
+                    <a href="{{ header_primary_action.url }}" class="inline-flex items-center rounded-full bg-[#14532d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#114524]">
+                        {{ header_primary_action.label }}
+                    </a>
 
-                <section class="overflow-hidden rounded-[2rem] bg-[linear-gradient(140deg,#052e16_0%,#14532d_42%,#1e293b_100%)] text-white shadow-[0_26px_70px_rgba(15,23,42,0.28)]">
-                    <div class="grid gap-6 px-6 py-7 sm:px-8 sm:py-8 xl:grid-cols-[1.2fr_0.8fr]">
-                        <div>
-                            <div class="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100">
-                                Farmer dashboard rebuild
-                            </div>
-                            <h2 class="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">
-                                {% block farmer_highlight_heading %}A more professional dashboard structure{% endblock %}
-                            </h2>
-                            <p class="mt-3 max-w-2xl text-sm leading-7 text-white/80 sm:text-base">
-                                {% block farmer_highlight_text %}
-                                    Each screen now has a focused purpose, which keeps the farmer experience cleaner and the template files easier to maintain.
-                                {% endblock %}
-                            </p>
-                            <div class="mt-6 flex flex-wrap gap-2 text-sm">
-                                <span class="rounded-full border border-white/15 bg-white/10 px-3 py-2">Shared sidebar navigation</span>
-                                <span class="rounded-full border border-white/15 bg-white/10 px-3 py-2">Focused page sections</span>
-                                <span class="rounded-full border border-white/15 bg-white/10 px-3 py-2">Tailwind-first styling</span>
-                            </div>
-                        </div>
+                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-4 py-2 text-sm font-medium text-emerald-700">
+                        Farmer workspace
+                    </span>
 
-                        <div>
-                            {% block farmer_page_aside %}
-                                <div class="rounded-[1.75rem] border border-white/15 bg-white/10 p-5">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100">Profile readiness</p>
-                                    <div class="mt-4 flex items-end justify-between gap-3">
-                                        <div>
-                                            <p class="text-4xl font-bold">{{ profile_readiness_percent }}%</p>
-                                            <p class="mt-1 text-sm text-white/70">Saved account and farm essentials.</p>
-                                        </div>
-                                        <div class="rounded-full bg-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
-                                            Farmer account
-                                        </div>
-                                    </div>
-                                    <div class="mt-5 space-y-3">
-                                        {% for item in profile_readiness_items %}
-                                            <div class="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-black/10 px-4 py-3">
-                                                <div>
-                                                    <p class="text-sm font-semibold text-white">{{ item.label }}</p>
-                                                    <p class="mt-1 text-sm text-white/65">{{ item.value }}</p>
-                                                </div>
-                                                <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] {% if item.is_complete %}bg-emerald-400/20 text-emerald-100{% else %}bg-amber-300/20 text-amber-100{% endif %}">
-                                                    {% if item.is_complete %}Saved{% else %}Pending{% endif %}
-                                                </span>
-                                            </div>
-                                        {% endfor %}
+                    <details class="relative">
+                        <summary class="flex cursor-pointer items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-left shadow-sm transition hover:border-slate-300 marker:content-none">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#10345b] text-sm font-bold text-white">
+                                {{ farmer_initials }}
+                            </span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-semibold text-slate-950">{{ display_name }}</span>
+                                <span class="mt-0.5 block text-xs uppercase tracking-[0.22em] text-slate-500">Account</span>
+                            </span>
+                            <svg class="h-4 w-4 flex-shrink-0 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.51a.75.75 0 0 1-1.08 0l-4.25-4.51a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd"></path>
+                            </svg>
+                        </summary>
+
+                        <div class="absolute right-0 top-[calc(100%+0.75rem)] z-30 w-[19.5rem] overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
+                            <div class="border-b border-slate-200 px-4 py-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#10345b] text-sm font-bold text-white">
+                                        {{ farmer_initials }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold text-slate-950">{{ display_name }}</p>
+                                        <p class="mt-1 text-[11px] uppercase tracking-[0.22em] text-slate-500">Farmer dashboard</p>
                                     </div>
                                 </div>
-                            {% endblock %}
-                        </div>
-                    </div>
-                </section>
+                                <div class="mt-3 rounded-2xl bg-slate-50 px-3 py-2.5">
+                                    <p class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Farm name</p>
+                                    <p class="mt-1 text-sm text-slate-800">{{ profile.farm_name|default:"Add farm name from profile" }}</p>
+                                </div>
+                            </div>
 
-                <main class="space-y-4">
-                    {% block farmer_dashboard_content %}{% endblock %}
-                </main>
-            </div>
+                            <div class="p-2">
+                                {% for section in workspace_menu_sections %}
+                                    <div class="{% if not forloop.first %}mt-2 border-t border-slate-100 pt-2{% endif %}">
+                                        <p class="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">{{ section.label }}</p>
+                                        <div class="space-y-1">
+                                            {% for item in section.items %}
+                                                <a href="{{ item.url }}" class="flex items-start justify-between gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-slate-50">
+                                                    <span class="min-w-0">
+                                                        <span class="block text-sm font-semibold text-slate-900">{{ item.label }}</span>
+                                                        <span class="mt-0.5 block text-xs leading-5 text-slate-500">{{ item.description }}</span>
+                                                    </span>
+                                                    <span class="pt-0.5 text-slate-300">&rsaquo;</span>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="border-t border-slate-200 p-2">
+                                <p class="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Session</p>
+                                <form method="post" action="{% url 'accounts:logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="flex w-full items-start justify-between gap-3 rounded-2xl px-3 py-2.5 text-left transition hover:bg-rose-50">
+                                        <span class="min-w-0">
+                                            <span class="block text-sm font-semibold text-rose-700">Sign out</span>
+                                            <span class="mt-0.5 block text-xs leading-5 text-rose-600">End this session safely.</span>
+                                        </span>
+                                        <span class="pt-0.5 text-rose-300">&rsaquo;</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </header>
+
+            <main class="space-y-8">
+                {% block farmer_dashboard_content %}{% endblock %}
+            </main>
         </div>
     </div>
+
+    {% include "includes/dashboard_ai_workspace.html" %}
 </body>
 </html>
