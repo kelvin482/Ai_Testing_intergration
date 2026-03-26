@@ -48,6 +48,7 @@ class FarmersDashboardViewTests(TestCase):
             "cow_number": "COW-001",
             "name": "Daisy",
             "breed": Cow.BREED_FRIESIAN,
+            "reproductive_status": Cow.REPRODUCTIVE_STATUS_NEAR_CALVING,
             "is_pregnant": True,
             "expected_calving_date": timezone.localdate() + timedelta(days=10),
             "tracking_stage": Cow.STAGE_NEARING_CALVING,
@@ -81,7 +82,8 @@ class FarmersDashboardViewTests(TestCase):
                 "name": "Bella",
                 "breed": Cow.BREED_AYRSHIRE,
                 "date_of_birth": "2023-02-14",
-                "is_pregnant": "on",
+                "reproductive_status": Cow.REPRODUCTIVE_STATUS_PREGNANCY_CONFIRMED,
+                "pregnancy_confirmation_date": "2025-12-20",
                 "expected_calving_date": (timezone.localdate() + timedelta(days=8)).isoformat(),
                 "is_lactating": "",
                 "notes": "First pregnancy for this cow.",
@@ -102,8 +104,27 @@ class FarmersDashboardViewTests(TestCase):
         )
         self.assertEqual(cow.owner, self.user)
         self.assertEqual(cow.cow_number, "COW-009")
-        self.assertEqual(cow.tracking_stage, Cow.STAGE_NEARING_CALVING)
+        self.assertEqual(cow.reproductive_status, Cow.REPRODUCTIVE_STATUS_PREGNANCY_CONFIRMED)
+        self.assertEqual(cow.tracking_stage, Cow.STAGE_PREGNANT)
         self.assertTrue(cow.photo.name)
+
+    def test_register_cow_requires_guided_reproductive_fields(self):
+        self._login_farmer()
+
+        response = self.client.post(
+            reverse("farmers_dashboard:cow_register"),
+            data={
+                "cow_number": "COW-010",
+                "name": "Malaika",
+                "breed": Cow.BREED_JERSEY,
+                "reproductive_status": Cow.REPRODUCTIVE_STATUS_INSEMINATED,
+                "notes": "Waiting for follow-up.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Add the insemination date to continue with the tracker.")
+        self.assertFalse(Cow.objects.filter(cow_number="COW-010").exists())
 
     def test_farmer_pages_render_registered_cow_content(self):
         self._login_farmer()
@@ -126,9 +147,31 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(reports_response, cow.name)
         self.assertContains(service_response, "Find veterinary support by county")
 
+    def test_tracking_page_shows_guided_reproductive_dates(self):
+        self._login_farmer()
+        cow = self._create_cow(
+            reproductive_status=Cow.REPRODUCTIVE_STATUS_INSEMINATED,
+            tracking_stage=Cow.STAGE_INSEMINATED,
+            is_pregnant=False,
+            insemination_type=Cow.INSEMINATION_TYPE_ARTIFICIAL,
+            last_heat_date=timezone.localdate() - timedelta(days=25),
+            insemination_date=timezone.localdate() - timedelta(days=4),
+            expected_calving_date=None,
+        )
+
+        response = self.client.get(reverse("farmers_dashboard:cow_tracking", args=[cow.pk]))
+
+        self.assertContains(response, "Already inseminated")
+        self.assertContains(response, "Artificial insemination")
+        self.assertContains(response, "Insemination date")
+
     def test_tracking_page_updates_stage_and_attention(self):
         self._login_farmer()
-        cow = self._create_cow(needs_attention=False, tracking_stage=Cow.STAGE_PREGNANT)
+        cow = self._create_cow(
+            needs_attention=False,
+            reproductive_status=Cow.REPRODUCTIVE_STATUS_PREGNANCY_CONFIRMED,
+            tracking_stage=Cow.STAGE_PREGNANT,
+        )
 
         stage_response = self.client.post(
             reverse("farmers_dashboard:cow_tracking", args=[cow.pk]),

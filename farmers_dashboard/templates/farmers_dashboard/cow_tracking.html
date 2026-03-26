@@ -14,11 +14,11 @@
                     <h2 class="mt-2 text-3xl tracking-tight text-slate-950 font-display">{{ cow.name }}</h2>
                     <p class="mt-2 text-sm leading-6 text-slate-600">{{ cow.get_breed_display }}</p>
                     <div class="mt-4 flex flex-wrap gap-2">
-                        <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% elif cow.status_tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                        <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% elif cow.status_tone == 'violet' %}bg-violet-100 text-violet-700{% elif cow.status_tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
                             {{ cow.status_label }}
                         </span>
                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                            {{ cow.get_tracking_stage_display }}
+                            {{ cow.reproductive_status_label }}
                         </span>
                     </div>
                 </div>
@@ -29,12 +29,41 @@
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Summary</p>
                     <p class="mt-2 text-sm leading-7 text-slate-700">{{ cow.summary_text }}</p>
                 </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Last heat</p>
+                        <p class="mt-2 text-sm leading-7 text-slate-700">
+                            {% if cow.last_heat_date %}{{ cow.last_heat_date|date:"d M Y" }}{% else %}Not added yet{% endif %}
+                        </p>
+                    </div>
+                    <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Insemination type</p>
+                        <p class="mt-2 text-sm leading-7 text-slate-700">
+                            {% if cow.insemination_type %}{{ cow.get_insemination_type_display }}{% else %}Not set yet{% endif %}
+                        </p>
+                    </div>
+                    <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Insemination date</p>
+                        <p class="mt-2 text-sm leading-7 text-slate-700">
+                            {% if cow.insemination_date %}{{ cow.insemination_date|date:"d M Y" }}{% else %}Not added yet{% endif %}
+                        </p>
+                    </div>
+                    <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Pregnancy confirmation</p>
+                        <p class="mt-2 text-sm leading-7 text-slate-700">
+                            {% if cow.pregnancy_confirmation_date %}{{ cow.pregnancy_confirmation_date|date:"d M Y" }}{% else %}Not added yet{% endif %}
+                        </p>
+                    </div>
+                </div>
+
                 <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Expected calving</p>
                     <p class="mt-2 text-sm leading-7 text-slate-700">
                         {% if cow.expected_calving_date %}{{ cow.expected_calving_date|date:"d M Y" }}{% else %}Not added yet{% endif %}
                     </p>
                 </div>
+
                 <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Notes</p>
                     <p class="mt-2 text-sm leading-7 text-slate-700">{{ cow.notes|default:"No notes added yet." }}</p>
@@ -46,6 +75,7 @@
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Tracking the calving process</p>
                 <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Update the current stage</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-600">The guided registration path has already placed this cow in the best starting stage. Update it here only when the cow moves into the next real step.</p>
             </div>
 
             <div class="mt-6 grid gap-3 md:grid-cols-2">
@@ -56,7 +86,7 @@
                         <button type="submit" class="w-full rounded-[1.2rem] border px-4 py-4 text-left transition {% if option.is_active %}border-emerald-300 bg-emerald-50 text-emerald-900{% else %}border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50{% endif %}">
                             <span class="block text-sm font-semibold">{{ option.label }}</span>
                             <span class="mt-1 block text-sm text-slate-600">
-                                {% if option.value == "registered" %}Cow profile created and ready for tracking.{% elif option.value == "pregnant" %}Pregnancy confirmed and follow-up should stay visible.{% elif option.value == "nearing_calving" %}Calving window is close and the cow needs more watch.{% elif option.value == "active_labor" %}Active labour has started and progress needs monitoring.{% else %}Calving completed and the cow moves into follow-up.{% endif %}
+                                {% if option.value == "registered" %}Cow profile created and waiting for the next reproductive step.{% elif option.value == "inseminated" %}Service happened and the next follow-up should stay visible.{% elif option.value == "pregnant" %}Pregnancy confirmed and calving planning should continue.{% elif option.value == "nearing_calving" %}Calving window is close and the cow needs more watch.{% elif option.value == "active_labor" %}Active labour has started and progress needs monitoring.{% else %}Calving completed and the cow moves into follow-up.{% endif %}
                             </span>
                         </button>
                     </form>

@@ -19,17 +19,18 @@
             {% endif %}
 
             <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
-                <div class="space-y-5">
-                    <div>
-                        <label for="{{ form.cow_number.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Cow Number *</label>
-                        {{ form.cow_number }}
-                        {% if form.cow_number.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.cow_number.errors.0 }}</p>{% endif %}
-                    </div>
-
-                    <div>
-                        <label for="{{ form.name.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Cow Name *</label>
-                        {{ form.name }}
-                        {% if form.name.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.name.errors.0 }}</p>{% endif %}
+                <div class="space-y-6">
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div>
+                            <label for="{{ form.cow_number.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Cow Number *</label>
+                            {{ form.cow_number }}
+                            {% if form.cow_number.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.cow_number.errors.0 }}</p>{% endif %}
+                        </div>
+                        <div>
+                            <label for="{{ form.name.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Cow Name *</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.name.errors.0 }}</p>{% endif %}
+                        </div>
                     </div>
 
                     <div class="grid gap-5 sm:grid-cols-2">
@@ -45,16 +46,75 @@
                         </div>
                     </div>
 
+                    <div>
+                        <div class="mb-3">
+                            <p class="text-sm font-semibold text-slate-900">Where is this cow starting today? *</p>
+                            <p class="mt-1 text-sm text-slate-600">Choose the reproductive path first so we only ask for the details needed now.</p>
+                        </div>
+
+                        <div class="grid gap-3 md:grid-cols-2">
+                            {% for option in form.reproductive_status %}
+                                <label for="{{ option.id_for_label }}" class="block cursor-pointer">
+                                    {{ option.tag }}
+                                    <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4 transition peer-checked:border-emerald-300 peer-checked:bg-emerald-50 peer-checked:shadow-[0_0_0_1px_rgba(110,231,183,0.4)]">
+                                        <p class="text-sm font-semibold text-slate-900">{{ option.choice_label }}</p>
+                                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                                            {% if option.choice_label == "Not inseminated yet" %}
+                                                Start with heat timing and the insemination path.
+                                            {% elif option.choice_label == "Already inseminated" %}
+                                                Continue from the insemination date and track the next follow-up.
+                                            {% elif option.choice_label == "Pregnancy confirmed" %}
+                                                Keep pregnancy progress and expected calving visible.
+                                            {% else %}
+                                                Move straight into calving watch and preparation.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.reproductive_status.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.reproductive_status.errors.0 }}</p>{% endif %}
+                    </div>
+
                     <div class="grid gap-5 sm:grid-cols-2">
-                        <label class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
-                            <div class="flex items-center justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-slate-900">Currently Pregnant?</p>
-                                    <p class="mt-1 text-sm text-slate-600">Turn this on if the cow is already confirmed pregnant.</p>
-                                </div>
-                                {{ form.is_pregnant }}
-                            </div>
-                        </label>
+                        <div data-conditional="not_inseminated">
+                            <label for="{{ form.last_heat_date.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Last Heat Date</label>
+                            {{ form.last_heat_date }}
+                            <p class="mt-2 text-xs text-slate-500">Use the latest heat you observed before requesting insemination.</p>
+                            {% if form.last_heat_date.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.last_heat_date.errors.0 }}</p>{% endif %}
+                        </div>
+
+                        <div data-conditional="not_inseminated">
+                            <label for="{{ form.insemination_type.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Insemination Type</label>
+                            {{ form.insemination_type }}
+                            <p class="mt-2 text-xs text-slate-500">This will guide the next service step in the workflow.</p>
+                            {% if form.insemination_type.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.insemination_type.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div data-conditional="inseminated">
+                            <label for="{{ form.insemination_date.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Insemination Date</label>
+                            {{ form.insemination_date }}
+                            <p class="mt-2 text-xs text-slate-500">The tracker will use this date as the start of the next follow-up.</p>
+                            {% if form.insemination_date.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.insemination_date.errors.0 }}</p>{% endif %}
+                        </div>
+
+                        <div data-conditional="pregnancy_confirmed">
+                            <label for="{{ form.pregnancy_confirmation_date.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Pregnancy Confirmation Date</label>
+                            {{ form.pregnancy_confirmation_date }}
+                            <p class="mt-2 text-xs text-slate-500">Use the date the pregnancy was checked or confirmed.</p>
+                            {% if form.pregnancy_confirmation_date.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.pregnancy_confirmation_date.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        <div data-conditional="pregnancy_confirmed near_calving">
+                            <label for="{{ form.expected_calving_date.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Expected Calving Date</label>
+                            {{ form.expected_calving_date }}
+                            <p class="mt-2 text-xs text-slate-500">This date keeps the tracker, alerts, and calving watch aligned.</p>
+                            {% if form.expected_calving_date.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.expected_calving_date.errors.0 }}</p>{% endif %}
+                        </div>
 
                         <label class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
                             <div class="flex items-center justify-between gap-4">
@@ -65,12 +125,6 @@
                                 {{ form.is_lactating }}
                             </div>
                         </label>
-                    </div>
-
-                    <div>
-                        <label for="{{ form.expected_calving_date.id_for_label }}" class="mb-2 block text-sm font-semibold text-slate-900">Expected Calving Date</label>
-                        {{ form.expected_calving_date }}
-                        {% if form.expected_calving_date.errors %}<p class="mt-2 text-sm text-rose-600">{{ form.expected_calving_date.errors.0 }}</p>{% endif %}
                     </div>
 
                     <div>
@@ -99,7 +153,7 @@
                     <div class="rounded-[1.6rem] border border-slate-200 bg-[#fbfcff] p-4">
                         <p class="text-sm font-semibold text-slate-900">What happens next?</p>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
-                            After registration, the cow appears on the overview and the farmer can open a calving tracker for that animal.
+                            After registration, the farmer goes straight to the cow tracker with the starting reproductive path already set.
                         </p>
                     </div>
                 </div>
@@ -145,6 +199,28 @@
         (() => {
             const input = document.getElementById("id_photo");
             const preview = document.getElementById("photo-preview");
+            const statusInputs = Array.from(document.querySelectorAll(".reproductive-status-input"));
+            const conditionalGroups = Array.from(document.querySelectorAll("[data-conditional]"));
+
+            const updateConditionalGroups = () => {
+                const selectedStatus = statusInputs.find((item) => item.checked)?.value || "";
+
+                conditionalGroups.forEach((group) => {
+                    const allowedStatuses = (group.dataset.conditional || "").split(" ").filter(Boolean);
+                    const shouldShow = selectedStatus && allowedStatuses.includes(selectedStatus);
+                    group.classList.toggle("hidden", !shouldShow);
+
+                    group.querySelectorAll("input, select, textarea").forEach((field) => {
+                        field.disabled = !shouldShow;
+                    });
+                });
+            };
+
+            statusInputs.forEach((radio) => {
+                radio.addEventListener("change", updateConditionalGroups);
+            });
+            updateConditionalGroups();
+
             if (!input || !preview) {
                 return;
             }

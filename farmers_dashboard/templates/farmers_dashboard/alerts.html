@@ -51,7 +51,7 @@
                             <p class="text-sm leading-6 text-slate-600">{{ cow.next_action_text }}</p>
                         </div>
                         <div class="flex flex-col items-start gap-3 lg:items-end">
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% else %}bg-amber-100 text-amber-700{% endif %}">
+                            <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'violet' %}bg-violet-100 text-violet-700{% else %}bg-amber-100 text-amber-700{% endif %}">
                                 {{ cow.status_label }}
                             </span>
                             <a href="{% url 'farmers_dashboard:cow_tracking' cow.pk %}" class="inline-flex text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">

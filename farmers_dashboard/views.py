@@ -202,6 +202,7 @@ SERVICE_PROVIDER_DIRECTORY = [
 
 TRACKING_STEPS = [
     (Cow.STAGE_REGISTERED, "Registered"),
+    (Cow.STAGE_INSEMINATED, "Inseminated"),
     (Cow.STAGE_PREGNANT, "Pregnant"),
     (Cow.STAGE_NEARING_CALVING, "Nearing calving"),
     (Cow.STAGE_ACTIVE_LABOR, "Active labor"),
@@ -219,12 +220,27 @@ def _sync_tracking_stage(cow):
     if cow.tracking_stage == Cow.STAGE_PREGNANT:
         cow.is_pregnant = True
         return
-    if cow.tracking_stage == Cow.STAGE_POST_CALVING:
+    if cow.tracking_stage in {Cow.STAGE_POST_CALVING, Cow.STAGE_REGISTERED, Cow.STAGE_INSEMINATED}:
         cow.is_pregnant = False
 
 
 def _apply_default_tracking_stage(cow):
-    if cow.expected_calving_date and cow.is_nearing_calving():
+    # Guided registration chooses the first reproductive path, then we map it
+    # into the current tracker stages so the rest of the farmer workflow stays
+    # stable while we build the richer calendar and request flow next.
+    if cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED:
+        cow.tracking_stage = Cow.STAGE_REGISTERED
+        cow.is_pregnant = False
+    elif cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_INSEMINATED:
+        cow.tracking_stage = Cow.STAGE_INSEMINATED
+        cow.is_pregnant = False
+    elif cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_PREGNANCY_CONFIRMED:
+        cow.tracking_stage = Cow.STAGE_PREGNANT
+        cow.is_pregnant = True
+    elif cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_NEAR_CALVING:
+        cow.tracking_stage = Cow.STAGE_NEARING_CALVING
+        cow.is_pregnant = True
+    elif cow.expected_calving_date and cow.is_nearing_calving():
         cow.tracking_stage = Cow.STAGE_NEARING_CALVING
     elif cow.is_pregnant:
         cow.tracking_stage = Cow.STAGE_PREGNANT
@@ -611,6 +627,8 @@ def cow_register_view(request):
         if form.is_valid():
             cow = form.save(commit=False)
             cow.owner = request.user
+            # Keep the tracker defaults and guided registration state aligned so
+            # the user lands on the correct cow workflow page immediately after save.
             _apply_default_tracking_stage(cow)
             cow.save()
             messages.success(request, f"{cow.name} was added to your herd.")
@@ -626,7 +644,7 @@ def cow_register_view(request):
             page_title="Register Cow | CowCalving",
             page_eyebrow="New cow",
             page_heading="New Cow Registration",
-            page_intro="Add a cow number, photo, and basic breeding details to start tracking.",
+            page_intro="Add the cow details, choose the reproductive starting point, and continue into the right tracker flow.",
             header_primary_action={
                 "label": "Back to dashboard",
                 "url": reverse("farmers_dashboard:dashboard"),
@@ -680,7 +698,7 @@ def cow_tracking_view(request, cow_id):
             page_title=f"{cow.name} Tracking | CowCalving",
             page_eyebrow="Cow tracking",
             page_heading=f"{cow.name} {cow.cow_number}",
-            page_intro="Move through the calving stages and keep attention flags visible for this cow.",
+            page_intro="Review the current reproductive path, then move through the calving stages and next actions for this cow.",
             header_primary_action={
                 "label": "Back to herd",
                 "url": reverse("farmers_dashboard:herd"),
