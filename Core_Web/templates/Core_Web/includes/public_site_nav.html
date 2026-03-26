@@ -50,14 +50,11 @@
       </li>
       <li><a href="{% url 'Core_Web:checklist' %}"
           class="{% if page_key == 'checklist' %}nav-current{% endif %}">Checklist</a></li>
-      <li><a href="{% url 'Core_Web:support' %}"
-          class="{% if page_key == 'support' %}nav-current{% endif %}">Support</a></li>
     </ul>
 
     <div class="nav-auth">
       {% if request.user.is_authenticated %}
-      <a href="{{ dashboard_url|default:profile_url }}" class="nav-auth-primary">{{ dashboard_label|default:"Open
-        Dashboard" }}</a>
+      <a href="{{ dashboard_url|default:profile_url }}" class="nav-auth-primary">{{ dashboard_label|default:"Open Dashboard" }}</a>
       <form method="post" action="{% url 'accounts:logout' %}" class="nav-auth-form">
         {% csrf_token %}
         <button type="submit">Sign out</button>
@@ -81,8 +78,6 @@
       class="mobile-nav-link {% if page_key == 'home' %}mobile-nav-link-current{% endif %}">Home</a>
     <a href="{% url 'Core_Web:checklist' %}"
       class="mobile-nav-link {% if page_key == 'checklist' %}mobile-nav-link-current{% endif %}">Checklist</a>
-    <a href="{% url 'Core_Web:support' %}"
-      class="mobile-nav-link {% if page_key == 'support' %}mobile-nav-link-current{% endif %}">Support</a>
   </div>
 
   <div class="mobile-nav-group">
@@ -98,8 +93,7 @@
   <div class="mobile-nav-group">
     <p class="mobile-nav-heading">Account</p>
     {% if request.user.is_authenticated %}
-    <a href="{{ dashboard_url|default:profile_url }}" class="mobile-nav-primary">{{ dashboard_label|default:"Open
-      Dashboard" }}</a>
+    <a href="{{ dashboard_url|default:profile_url }}" class="mobile-nav-primary">{{ dashboard_label|default:"Open Dashboard" }}</a>
     <a href="{{ profile_url }}" class="mobile-nav-link">My Profile</a>
     <form method="post" action="{% url 'accounts:logout' %}" class="nav-auth-form">
       {% csrf_token %}

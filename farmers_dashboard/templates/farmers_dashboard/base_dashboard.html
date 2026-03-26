@@ -59,40 +59,42 @@
 </head>
 <body class="min-h-screen bg-[#f5f7fb] font-body text-slate-900">
     <div class="min-h-screen xl:grid xl:grid-cols-[17.5rem_minmax(0,1fr)]">
-        <aside class="bg-[linear-gradient(180deg,#0c2745_0%,#10345b_52%,#11273f_100%)] text-white shadow-[24px_0_60px_rgba(15,23,42,0.12)] xl:sticky xl:top-0 xl:h-screen xl:overflow-y-auto">
+        <aside class="bg-[linear-gradient(180deg,#123524_0%,#18452f_48%,#0f2d20_100%)] text-white shadow-[24px_0_60px_rgba(15,23,42,0.12)] xl:sticky xl:top-0 xl:h-screen xl:overflow-y-auto">
             {% include "farmers_dashboard/includes/sidebar.html" %}
         </aside>
 
         <div class="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-10">
             <div class="dashboard-shell mx-auto">
-            <header class="mb-6 flex flex-col gap-5 border-b border-slate-200/80 pb-6 lg:mb-8 lg:flex-row lg:items-start lg:justify-between">
-                <div class="max-w-3xl">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <p class="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{{ page_eyebrow }}</p>
+            <header class="mb-6 grid gap-5 border-b border-slate-200/80 pb-6 lg:mb-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-500">{{ page_eyebrow }}</p>
                         {% if page_header_context %}
-                            <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600 shadow-sm">
                                 {{ page_header_context }}
                             </span>
                         {% endif %}
                     </div>
-                    <h1 class="mt-3 text-3xl tracking-tight text-slate-950 sm:text-4xl lg:text-[2.7rem]">
+                    <h1 class="mt-3 max-w-3xl text-3xl tracking-tight text-slate-950 sm:text-4xl lg:text-[2.7rem]">
                         <span class="font-display">{{ page_header_title }}</span>
                     </h1>
-                    <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">{{ page_intro }}</p>
+                    <p class="mt-3 max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-7">{{ page_intro }}</p>
                 </div>
 
-                <div class="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
-                    <a href="{{ header_primary_action.url }}" class="inline-flex items-center justify-center rounded-full bg-[#14532d] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#114524]">
-                        {{ header_primary_action.label }}
-                    </a>
+                <div class="flex w-full flex-col gap-3 lg:w-[22rem] lg:justify-self-end">
+                    <div class="flex flex-wrap items-center gap-3 lg:justify-end">
+                        <a href="{{ header_primary_action.url }}" class="inline-flex items-center justify-center rounded-full bg-[#14532d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#114524]">
+                            {{ header_primary_action.label }}
+                        </a>
 
-                    <span class="inline-flex items-center justify-center rounded-full bg-emerald-100 px-4 py-2.5 text-sm font-medium text-emerald-700">
-                        Farmer workspace
-                    </span>
+                        <span class="inline-flex items-center justify-center rounded-full border border-emerald-200 bg-emerald-100 px-4 py-2.5 text-sm font-medium text-emerald-700">
+                            Farmer workspace
+                        </span>
+                    </div>
 
-                    <details class="relative sm:min-w-[18rem]">
-                        <summary class="flex cursor-pointer items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-left shadow-sm transition hover:border-slate-300 marker:content-none">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-[#10345b] text-sm font-bold text-white">
+                    <details class="relative">
+                        <summary class="flex cursor-pointer items-center gap-3 rounded-[1.4rem] border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-slate-300 marker:content-none">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-full bg-[#10345b] text-sm font-bold text-white shadow-sm">
                                 {{ farmer_initials }}
                             </span>
                             <span class="min-w-0 flex-1">
@@ -176,5 +178,6 @@
     </div>
 
     {% include "includes/dashboard_ai_workspace.html" %}
+    {% block farmer_dashboard_scripts %}{% endblock %}
 </body>
 </html>

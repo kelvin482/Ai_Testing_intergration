@@ -651,10 +651,10 @@
   <div class="main-wrap">
     <div class="two-col-teasers">
       <div class="teaser-card">
-        <h3>Support For Heat, Pregnancy, And Calving Decisions</h3>
-        <p>If the case is no longer routine, move to the support page to organize escalation, pregnancy follow-up, or
-          the next provider contact quickly.</p>
-        <a href="{% url 'Core_Web:support' %}#support-team" class="btn-outline">Open Support Options</a>
+        <h3>Troubleshooting For Heat, Pregnancy, And Calving Decisions</h3>
+        <p>If the case is no longer routine, move to the troubleshooting section quickly so the farm can identify warning
+          signs, review the next checks, and decide when to contact a veterinarian.</p>
+        <a href="#trouble" class="btn-outline">Open Troubleshooting</a>
       </div>
       <div class="teaser-card">
         <h3>Preparation And Readiness Checklist</h3>
@@ -698,7 +698,7 @@
   <div class="where-next">
     <div class="main-wrap">
       <h2>Use The Other Pages For The Next Step</h2>
-      <div class="next-grid">
+      <div class="next-grid next-grid--three">
         <a href="{% url 'Core_Web:home' %}" class="next-card">
           <div class="next-card-icon">&#8962;</div>
           <div class="next-card-body">
@@ -720,13 +720,6 @@
             <p>Move to the practical action page when the next step is preparation and execution.</p>
           </div>
         </a>
-        <a href="{% url 'Core_Web:support' %}" class="next-card">
-          <div class="next-card-icon">&#128222;</div>
-          <div class="next-card-body">
-            <h3>Support</h3>
-            <p>Open support when the problem needs escalation or outside help.</p>
-          </div>
-        </a>
       </div>
     </div>
   </div>
@@ -738,7 +731,7 @@
     </p>
     <div class="cta-btns">
       <a href="{% url 'Core_Web:checklist' %}" class="cta-btn-primary">Open Checklist</a>
-      <a href="{% url 'Core_Web:support' %}" class="cta-btn-secondary">Open Support</a>
+      <a href="#trouble" class="cta-btn-secondary">Open Troubleshooting</a>
     </div>
   </div>
 
@@ -760,7 +753,6 @@
           <li><a href="{% url 'Core_Web:home' %}">Home</a></li>
           <li><a href="{% url 'Core_Web:guide' %}">Guide</a></li>
           <li><a href="{% url 'Core_Web:checklist' %}">Checklist</a></li>
-          <li><a href="{% url 'Core_Web:support' %}">Support</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -779,8 +771,8 @@
         <ul>
           <li><a href="{% url 'Core_Web:checklist' %}#checklist">Season Checklist</a></li>
           <li><a href="{% url 'Core_Web:checklist' %}#faq">Checklist FAQ</a></li>
-          <li><a href="{% url 'Core_Web:support' %}#support-team">Support Options</a></li>
-          <li><a href="{% url 'Core_Web:support' %}#support-faq">Support FAQ</a></li>
+          <li><a href="#trouble">Troubleshooting</a></li>
+          <li><a href="#faq">Guide FAQ</a></li>
         </ul>
       </div>
     </div>

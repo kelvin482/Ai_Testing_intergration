@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import Cow
+from .models import Cow, ReproductiveEvent
 
 
 class CowRegistrationForm(forms.ModelForm):
@@ -165,3 +165,56 @@ class CowRegistrationForm(forms.ModelForm):
         if photo.size > 5 * 1024 * 1024:
             raise forms.ValidationError("Image size should be 5 MB or less.")
         return photo
+
+
+class ReproductiveEventForm(forms.Form):
+    event_type = forms.ChoiceField(
+        choices=ReproductiveEvent.EVENT_TYPE_CHOICES,
+        widget=forms.RadioSelect(
+            attrs={"class": "sr-only peer reproductive-event-input"}
+        ),
+    )
+    event_date = forms.DateField(
+        widget=forms.DateInput(attrs={"type": "date", "class": "form-input"})
+    )
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "class": "form-input",
+                "placeholder": "Optional short note for this event",
+            }
+        ),
+    )
+
+    def __init__(self, *args, cow=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cow = cow
+
+    def clean(self):
+        cleaned_data = super().clean()
+        event_type = cleaned_data.get("event_type")
+        event_date = cleaned_data.get("event_date")
+
+        if not event_type or not event_date:
+            return cleaned_data
+
+        if self.cow and event_type == ReproductiveEvent.EVENT_PREGNANCY_CONFIRMED:
+            if not self.cow.insemination_date and not self.cow.expected_calving_date:
+                self.add_error(
+                    "event_type",
+                    "Record insemination first so the pregnancy follow-up can stay accurate.",
+                )
+
+        if self.cow and event_type == ReproductiveEvent.EVENT_CALVED and not (
+            self.cow.is_pregnant
+            or self.cow.expected_calving_date
+            or self.cow.tracking_stage == Cow.STAGE_ACTIVE_LABOR
+        ):
+            self.add_error(
+                "event_type",
+                "Mark calving after the pregnancy path has been started for this cow.",
+            )
+
+        return cleaned_data

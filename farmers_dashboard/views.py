@@ -1,13 +1,19 @@
+import calendar
+from datetime import datetime, timedelta
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 
 from users.permissions import role_required
 from users.services import get_or_create_profile
 
-from .forms import CowRegistrationForm
-from .models import Cow
+from .forms import CowRegistrationForm, ReproductiveEventForm
+from .models import Cow, InseminationRequest, ReproductiveEvent
 
 
 KENYA_COUNTY_OPTIONS = [
@@ -209,6 +215,64 @@ TRACKING_STEPS = [
     (Cow.STAGE_POST_CALVING, "Post-calving"),
 ]
 
+TRACKING_STEP_DESCRIPTIONS = {
+    Cow.STAGE_REGISTERED: "Cow profile created and waiting for the next reproductive step.",
+    Cow.STAGE_INSEMINATED: "Service happened and the next follow-up should stay visible.",
+    Cow.STAGE_PREGNANT: "Pregnancy confirmed and calving planning should continue.",
+    Cow.STAGE_NEARING_CALVING: "Calving window is close and the cow needs more watch.",
+    Cow.STAGE_ACTIVE_LABOR: "Active labour has started and progress needs monitoring.",
+    Cow.STAGE_POST_CALVING: "Calving completed and the cow moves into follow-up.",
+}
+
+# Keep reproductive timing assumptions centralized so the tracking calendar can
+# evolve without scattering numbers through templates and view branches.
+GESTATION_LENGTH_BY_BREED = {
+    Cow.BREED_FRIESIAN: 279,
+    Cow.BREED_AYRSHIRE: 280,
+    Cow.BREED_JERSEY: 279,
+    Cow.BREED_GUERNSEY: 285,
+    Cow.BREED_SAHIWAL: 283,
+    Cow.BREED_CROSSBREED: 283,
+    Cow.BREED_OTHER: 283,
+}
+
+CALENDAR_LEGEND = [
+    {"tone": "orange", "label": "Heat or fertile service window"},
+    {"tone": "sky", "label": "Insemination day"},
+    {"tone": "teal", "label": "Pregnancy check window"},
+    {"tone": "emerald", "label": "Pregnancy confirmed"},
+    {"tone": "amber", "label": "Close-up calving watch"},
+    {"tone": "rose", "label": "Due or overdue"},
+]
+
+EVENT_STYLE_MAP = {
+    ReproductiveEvent.EVENT_HEAT_OBSERVED: {
+        "tone": "orange",
+        "short_label": "Heat",
+        "detail": "Heat observed and service timing can be planned from this day.",
+    },
+    ReproductiveEvent.EVENT_INSEMINATION_RECORDED: {
+        "tone": "sky",
+        "short_label": "AI",
+        "detail": "Insemination recorded and follow-up predictions updated from this date.",
+    },
+    ReproductiveEvent.EVENT_PREGNANCY_CONFIRMED: {
+        "tone": "emerald",
+        "short_label": "OK",
+        "detail": "Pregnancy confirmed and calving planning continues from here.",
+    },
+    ReproductiveEvent.EVENT_PREGNANCY_NOT_KEPT: {
+        "tone": "rose",
+        "short_label": "Loss",
+        "detail": "Pregnancy did not continue and the cow returns to a watch-for-heat path.",
+    },
+    ReproductiveEvent.EVENT_CALVED: {
+        "tone": "amber",
+        "short_label": "Calved",
+        "detail": "Calving recorded and the tracker moves into recovery follow-up.",
+    },
+}
+
 
 def _sync_tracking_stage(cow):
     if cow.tracking_stage == Cow.STAGE_ACTIVE_LABOR:
@@ -249,9 +313,683 @@ def _apply_default_tracking_stage(cow):
     _sync_tracking_stage(cow)
 
 
+def _build_insemination_request_note(cow):
+    note_parts = []
+    if cow.last_heat_date:
+        note_parts.append(f"Last heat observed on {cow.last_heat_date:%d %b %Y}.")
+    if cow.insemination_type:
+        note_parts.append(
+            f"Preferred service type: {cow.get_insemination_type_display()}."
+        )
+    note_parts.append("Created from the farmer cow registration workflow.")
+    return " ".join(note_parts)
+
+
+def _ensure_open_insemination_request(cow):
+    if cow.reproductive_status != Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED:
+        return None
+
+    active_request = cow.active_insemination_request
+    if active_request:
+        return active_request
+
+    request = InseminationRequest.objects.create(
+        cow=cow,
+        farmer=cow.owner,
+        service_type=cow.insemination_type,
+        request_note=_build_insemination_request_note(cow),
+    )
+    # Keep the cached property aligned for the current request cycle so the same
+    # response can render the new status without reloading the cow from the DB.
+    cow.__dict__["active_insemination_request"] = request
+    return request
+
+
+def _resolve_active_insemination_request(cow):
+    active_request = cow.active_insemination_request
+    if not active_request:
+        return
+
+    active_request.status = InseminationRequest.STATUS_COMPLETED
+    active_request.resolved_at = timezone.now()
+    active_request.save(update_fields=["status", "resolved_at", "updated_at"])
+    cow.__dict__["active_insemination_request"] = None
+
+
+def _parse_calendar_month(value):
+    if not value:
+        return None
+    try:
+        parsed = datetime.strptime(value, "%Y-%m")
+    except ValueError:
+        return None
+    return parsed.date().replace(day=1)
+
+
+def _build_tracking_redirect(cow_id, month_value):
+    target = reverse("farmers_dashboard:cow_tracking", args=[cow_id])
+    if month_value:
+        return f"{target}?month={month_value}"
+    return target
+
+
+def _derive_expected_calving_date(cow):
+    if cow.expected_calving_date:
+        return cow.expected_calving_date
+    if not cow.insemination_date:
+        return None
+    gestation_days = GESTATION_LENGTH_BY_BREED.get(cow.breed, 283)
+    return cow.insemination_date + timedelta(days=gestation_days)
+
+
+def _save_reproductive_event(cow, *, recorded_by, event_type, event_date, notes=""):
+    event = ReproductiveEvent.objects.create(
+        cow=cow,
+        recorded_by=recorded_by,
+        event_type=event_type,
+        event_date=event_date,
+        notes=notes,
+    )
+
+    # The cow row stores the active state for the current cycle while the
+    # event table keeps the full reproductive history for the calendar.
+    if event_type == ReproductiveEvent.EVENT_HEAT_OBSERVED:
+        cow.last_heat_date = event_date
+        cow.insemination_date = None
+        cow.pregnancy_confirmation_date = None
+        cow.expected_calving_date = None
+        cow.reproductive_status = Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED
+        cow.tracking_stage = Cow.STAGE_REGISTERED
+        cow.is_pregnant = False
+        cow.needs_attention = False
+    elif event_type == ReproductiveEvent.EVENT_INSEMINATION_RECORDED:
+        cow.insemination_date = event_date
+        cow.pregnancy_confirmation_date = None
+        cow.expected_calving_date = event_date + timedelta(
+            days=GESTATION_LENGTH_BY_BREED.get(cow.breed, 283)
+        )
+        cow.reproductive_status = Cow.REPRODUCTIVE_STATUS_INSEMINATED
+        cow.tracking_stage = Cow.STAGE_INSEMINATED
+        cow.is_pregnant = False
+        cow.needs_attention = False
+        _resolve_active_insemination_request(cow)
+    elif event_type == ReproductiveEvent.EVENT_PREGNANCY_CONFIRMED:
+        cow.pregnancy_confirmation_date = event_date
+        cow.expected_calving_date = _derive_expected_calving_date(cow)
+        cow.is_pregnant = True
+        if cow.expected_calving_date and (cow.expected_calving_date - event_date).days <= 30:
+            cow.reproductive_status = Cow.REPRODUCTIVE_STATUS_NEAR_CALVING
+            cow.tracking_stage = Cow.STAGE_NEARING_CALVING
+        else:
+            cow.reproductive_status = Cow.REPRODUCTIVE_STATUS_PREGNANCY_CONFIRMED
+            cow.tracking_stage = Cow.STAGE_PREGNANT
+        cow.needs_attention = False
+    elif event_type == ReproductiveEvent.EVENT_PREGNANCY_NOT_KEPT:
+        cow.insemination_date = None
+        cow.pregnancy_confirmation_date = None
+        cow.expected_calving_date = None
+        cow.reproductive_status = Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED
+        cow.tracking_stage = Cow.STAGE_REGISTERED
+        cow.is_pregnant = False
+        cow.needs_attention = True
+    elif event_type == ReproductiveEvent.EVENT_CALVED:
+        cow.insemination_date = None
+        cow.pregnancy_confirmation_date = None
+        cow.expected_calving_date = None
+        cow.reproductive_status = ""
+        cow.tracking_stage = Cow.STAGE_POST_CALVING
+        cow.is_pregnant = False
+        cow.is_lactating = True
+        cow.needs_attention = False
+
+    cow.save(
+        update_fields=[
+            "last_heat_date",
+            "insemination_date",
+            "pregnancy_confirmation_date",
+            "expected_calving_date",
+            "reproductive_status",
+            "tracking_stage",
+            "is_pregnant",
+            "is_lactating",
+            "needs_attention",
+            "updated_at",
+        ]
+    )
+    return event
+
+
+def _format_day_count(value, *, future_label, past_label):
+    if value == 0:
+        return "Today"
+    if value > 0:
+        return f"{value} day{'s' if value != 1 else ''} {future_label}"
+    absolute = abs(value)
+    return f"{absolute} day{'s' if absolute != 1 else ''} {past_label}"
+
+
+def _build_tracking_highlights(cow):
+    today = timezone.localdate()
+    highlights = []
+
+    if cow.last_heat_date and cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED:
+        days_since_heat = (today - cow.last_heat_date).days
+        highlights.append(
+            {
+                "label": "Heat timing",
+                "value": f"{days_since_heat} day{'s' if days_since_heat != 1 else ''} since last heat",
+            }
+        )
+
+    if cow.insemination_date:
+        days_since_insemination = (today - cow.insemination_date).days
+        highlights.append(
+            {
+                "label": "Since insemination",
+                "value": f"{days_since_insemination} day{'s' if days_since_insemination != 1 else ''}",
+            }
+        )
+
+    if cow.pregnancy_confirmation_date:
+        days_since_confirmation = (today - cow.pregnancy_confirmation_date).days
+        highlights.append(
+            {
+                "label": "Since confirmation",
+                "value": f"{days_since_confirmation} day{'s' if days_since_confirmation != 1 else ''}",
+            }
+        )
+
+    if cow.expected_calving_date:
+        day_delta = (cow.expected_calving_date - today).days
+        highlights.append(
+            {
+                "label": "Calving timing",
+                "value": _format_day_count(
+                    day_delta,
+                    future_label="to calving",
+                    past_label="overdue",
+                ),
+            }
+        )
+
+    if not highlights:
+        highlights.append(
+            {
+                "label": "Tracker",
+                "value": "Ready for the next recorded step",
+            }
+        )
+
+    return highlights[:3]
+
+
+def _build_tracking_timeline(cow):
+    timeline_items = [
+        {
+            "label": "Cow registered",
+            "date": timezone.localtime(cow.created_at).date(),
+            "detail": "This cow profile was added to your herd tracker.",
+        }
+    ]
+
+    if cow.last_heat_date:
+        timeline_items.append(
+            {
+                "label": "Last heat",
+                "date": cow.last_heat_date,
+                "detail": "Used to keep service timing visible.",
+            }
+        )
+
+    if cow.active_insemination_request:
+        timeline_items.append(
+            {
+                "label": "Insemination requested",
+                "date": timezone.localtime(cow.active_insemination_request.submitted_at).date(),
+                "detail": "Support request created from this cow workflow.",
+            }
+        )
+
+    if cow.insemination_date:
+        timeline_items.append(
+            {
+                "label": "Insemination date",
+                "date": cow.insemination_date,
+                "detail": "Service date recorded for the tracker.",
+            }
+        )
+
+    if cow.pregnancy_confirmation_date:
+        timeline_items.append(
+            {
+                "label": "Pregnancy confirmation",
+                "date": cow.pregnancy_confirmation_date,
+                "detail": "Confirmation date saved for follow-up.",
+            }
+        )
+
+    if cow.expected_calving_date:
+        timeline_items.append(
+            {
+                "label": "Expected calving",
+                "date": cow.expected_calving_date,
+                "detail": "Use this date to plan the next check and calving watch.",
+            }
+        )
+
+    return timeline_items
+
+
+def _get_tracking_due_date(cow):
+    return _derive_expected_calving_date(cow)
+
+
+def _add_calendar_event(
+    events_by_date,
+    event_date,
+    *,
+    tone,
+    label,
+    short_label,
+    priority,
+    detail="",
+):
+    if not event_date:
+        return
+    payload = {
+        "tone": tone,
+        "label": label,
+        "short_label": short_label,
+        "priority": priority,
+        "detail": detail,
+    }
+    events_by_date.setdefault(event_date, []).append(payload)
+
+
+def _add_calendar_range(
+    events_by_date,
+    start_date,
+    end_date,
+    *,
+    tone,
+    label,
+    short_label,
+    priority,
+    detail="",
+):
+    if not start_date or not end_date or end_date < start_date:
+        return
+
+    current_day = start_date
+    while current_day <= end_date:
+        _add_calendar_event(
+            events_by_date,
+            current_day,
+            tone=tone,
+            label=label,
+            short_label=short_label,
+            priority=priority,
+            detail=detail,
+        )
+        current_day += timedelta(days=1)
+
+
+def _build_schedule_items(cow):
+    today = timezone.localdate()
+    items = []
+    recorded_events = list(cow.reproductive_events.all())
+
+    for event in recorded_events:
+        style = EVENT_STYLE_MAP[event.event_type]
+        items.append(
+            {
+                "kind": "point",
+                "date": event.event_date,
+                "end_date": event.event_date,
+                "sort_date": event.event_date,
+                "tone": style["tone"],
+                "label": event.get_event_type_display(),
+                "short_label": style["short_label"],
+                "detail": event.notes or style["detail"],
+                "priority": 100,
+                "is_actual": True,
+            }
+        )
+
+    due_date = _get_tracking_due_date(cow)
+
+    if cow.last_heat_date and not cow.insemination_date:
+        next_heat_start = cow.last_heat_date + timedelta(days=18)
+        next_heat_end = cow.last_heat_date + timedelta(days=24)
+        items.append(
+            {
+                "kind": "range",
+                "date": next_heat_start,
+                "end_date": next_heat_end,
+                "sort_date": max(next_heat_start, today),
+                "tone": "orange",
+                "label": "Watch for next heat",
+                "short_label": "Heat",
+                "detail": f"Likely heat watch window from {next_heat_start:%d %b} to {next_heat_end:%d %b}.",
+                "priority": 35,
+                "is_actual": False,
+            }
+        )
+
+    if cow.insemination_date:
+        return_heat_start = cow.insemination_date + timedelta(days=18)
+        return_heat_end = cow.insemination_date + timedelta(days=24)
+        pregnancy_check_start = cow.insemination_date + timedelta(days=28)
+        pregnancy_check_end = cow.insemination_date + timedelta(days=35)
+        items.extend(
+            [
+                {
+                    "kind": "range",
+                    "date": return_heat_start,
+                    "end_date": return_heat_end,
+                    "sort_date": max(return_heat_start, today),
+                    "tone": "orange",
+                    "label": "Return-to-heat watch",
+                    "short_label": "Heat",
+                    "detail": f"Watch for a return to heat from {return_heat_start:%d %b} to {return_heat_end:%d %b}.",
+                    "priority": 40,
+                    "is_actual": False,
+                },
+                {
+                    "kind": "range",
+                    "date": pregnancy_check_start,
+                    "end_date": pregnancy_check_end,
+                    "sort_date": max(pregnancy_check_start, today),
+                    "tone": "teal",
+                    "label": "Pregnancy check window",
+                    "short_label": "Check",
+                    "detail": f"Best follow-up window from {pregnancy_check_start:%d %b} to {pregnancy_check_end:%d %b}.",
+                    "priority": 50,
+                    "is_actual": False,
+                },
+            ]
+        )
+
+    if due_date:
+        close_up_start = due_date - timedelta(days=21)
+        items.extend(
+            [
+                {
+                    "kind": "range",
+                    "date": close_up_start,
+                    "end_date": due_date - timedelta(days=1),
+                    "sort_date": max(close_up_start, today),
+                    "tone": "amber",
+                    "label": "Close-up calving watch",
+                    "short_label": "Watch",
+                    "detail": f"Closer calving watch from {close_up_start:%d %b} to {(due_date - timedelta(days=1)):%d %b}.",
+                    "priority": 45,
+                    "is_actual": False,
+                },
+                {
+                    "kind": "point",
+                    "date": due_date,
+                    "end_date": due_date,
+                    "sort_date": due_date,
+                    "tone": "rose",
+                    "label": "Expected calving day",
+                    "short_label": "Due",
+                    "detail": f"Expected calving day based on the current service timeline: {due_date:%d %b %Y}.",
+                    "priority": 90,
+                    "is_actual": False,
+                },
+            ]
+        )
+        if due_date < today and cow.tracking_stage != Cow.STAGE_POST_CALVING:
+            items.append(
+                {
+                    "kind": "point",
+                    "date": today,
+                    "end_date": today,
+                    "sort_date": today,
+                    "tone": "rose",
+                    "label": "Overdue for calving review",
+                    "short_label": "Due",
+                    "detail": "The expected calving day has passed. Keep this cow under closer watch or request support.",
+                    "priority": 95,
+                    "is_actual": False,
+                }
+            )
+
+    return sorted(
+        items,
+        key=lambda item: (item["sort_date"], -item["priority"], item["label"]),
+    )
+
+
+def _build_tracking_history(cow):
+    history_items = []
+    for event in cow.reproductive_events.all()[:6]:
+        style = EVENT_STYLE_MAP[event.event_type]
+        history_items.append(
+            {
+                "label": event.get_event_type_display(),
+                "date": event.event_date,
+                "tone": style["tone"],
+                "detail": event.notes or style["detail"],
+            }
+        )
+
+    if history_items:
+        return history_items
+
+    return [
+        {
+            "label": "Cow registered",
+            "date": timezone.localtime(cow.created_at).date(),
+            "tone": "slate",
+            "detail": "Registration started the tracking record for this cow.",
+        }
+    ]
+
+
+def _build_upcoming_events(schedule_items, focus_date):
+    today = timezone.localdate()
+    focus_month_start = focus_date.replace(day=1)
+    focus_month_end = focus_month_start.replace(
+        day=calendar.monthrange(focus_month_start.year, focus_month_start.month)[1]
+    )
+
+    month_items = []
+    future_items = []
+
+    for item in schedule_items:
+        if item["end_date"] < today:
+            continue
+
+        display_date = max(item["date"], today)
+        entry = {
+            "label": item["label"],
+            "date": display_date,
+            "tone": item["tone"],
+            "detail": item["detail"],
+            "is_actual": item["is_actual"],
+        }
+
+        if display_date <= focus_month_end and item["end_date"] >= focus_month_start:
+            month_items.append(entry)
+        future_items.append(entry)
+
+    deduped = []
+    seen = set()
+    for item in month_items or future_items:
+        key = (item["label"], item["date"], item["detail"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
+
+    if month_items:
+        heading = f"Upcoming in {focus_date.strftime('%B')}"
+        summary = "Only the next few dates that matter stay visible here."
+    else:
+        heading = "Next events"
+        summary = "The next predicted follow-up dates appear here when the selected month is quiet."
+
+    return {
+        "heading": heading,
+        "summary": summary,
+        "items": deduped[:5],
+    }
+
+
+def _build_tracking_calendar(cow, *, focus_date=None):
+    today = timezone.localdate()
+    schedule_items = _build_schedule_items(cow)
+    focus_date = focus_date or next(
+        (
+            item["sort_date"]
+            for item in schedule_items
+            if item["sort_date"] >= today
+        ),
+        None,
+    )
+    focus_date = focus_date or cow.insemination_date or cow.last_heat_date or today
+    focus_date = focus_date.replace(day=1)
+
+    calendar_builder = calendar.Calendar(firstweekday=0)
+    month_weeks = calendar_builder.monthdatescalendar(focus_date.year, focus_date.month)
+    events_by_date = {}
+
+    for item in schedule_items:
+        if item["kind"] == "range":
+            _add_calendar_range(
+                events_by_date,
+                item["date"],
+                item["end_date"],
+                tone=item["tone"],
+                label=item["label"],
+                short_label=item["short_label"],
+                priority=item["priority"],
+                detail=item["detail"],
+            )
+            continue
+
+        _add_calendar_event(
+            events_by_date,
+            item["date"],
+            tone=item["tone"],
+            label=item["label"],
+            short_label=item["short_label"],
+            priority=item["priority"],
+            detail=item["detail"],
+        )
+
+    calendar_weeks = []
+    for week in month_weeks:
+        week_cells = []
+        for day in week:
+            day_events = sorted(
+                events_by_date.get(day, []),
+                key=lambda item: item["priority"],
+                reverse=True,
+            )
+            primary_event = day_events[0] if day_events else None
+            week_cells.append(
+                {
+                    "date": day,
+                    "date_label": day.strftime("%d %b %Y"),
+                    "day": day.day,
+                    "in_month": day.month == focus_date.month,
+                    "is_today": day == today,
+                    "primary_event": primary_event,
+                    "event_count": len(day_events),
+                    "event_labels": [event["label"] for event in day_events],
+                    "event_details": day_events,
+                }
+            )
+        calendar_weeks.append(week_cells)
+
+    due_date = _get_tracking_due_date(cow)
+    milestone_chips = []
+    if cow.last_heat_date:
+        milestone_chips.append(
+            {"label": "Last heat", "value": cow.last_heat_date.strftime("%d %b %Y")}
+        )
+    if cow.insemination_date:
+        milestone_chips.append(
+            {"label": "Inseminated", "value": cow.insemination_date.strftime("%d %b %Y")}
+        )
+    if cow.pregnancy_confirmation_date:
+        milestone_chips.append(
+            {
+                "label": "Confirmed",
+                "value": cow.pregnancy_confirmation_date.strftime("%d %b %Y"),
+            }
+        )
+    if due_date:
+        milestone_chips.append(
+            {"label": "Expected calving", "value": due_date.strftime("%d %b %Y")}
+        )
+
+    previous_month = (focus_date - timedelta(days=1)).replace(day=1)
+    next_month = (focus_date + timedelta(days=32)).replace(day=1)
+
+    return {
+        "month_label": focus_date.strftime("%B %Y"),
+        "month_value": focus_date.strftime("%Y-%m"),
+        "previous_month": previous_month.strftime("%Y-%m"),
+        "next_month": next_month.strftime("%Y-%m"),
+        "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "weeks": calendar_weeks,
+        "legend": CALENDAR_LEGEND,
+        "milestone_chips": milestone_chips[:4],
+        "summary_text": "Record one event, then tap any day to review saved events and the next predicted dates.",
+        "upcoming_events": _build_upcoming_events(schedule_items, focus_date),
+        "history_items": _build_tracking_history(cow),
+    }
+
+
+def _build_stage_options(cow):
+    current_index = next(
+        (
+            index
+            for index, (value, _label) in enumerate(TRACKING_STEPS)
+            if value == cow.tracking_stage
+        ),
+        0,
+    )
+
+    stage_options = []
+    for index, (value, label) in enumerate(TRACKING_STEPS):
+        if index < current_index:
+            state = "completed"
+        elif index == current_index:
+            state = "current"
+        elif index == current_index + 1:
+            state = "next"
+        else:
+            state = "later"
+
+        stage_options.append(
+            {
+                "value": value,
+                "label": label,
+                "description": TRACKING_STEP_DESCRIPTIONS[value],
+                "state": state,
+                "is_current": state == "current",
+                "is_next": state == "next",
+            }
+        )
+
+    return stage_options
+
+
 def _get_cows_for_user(user):
     cows = list(
-        Cow.objects.filter(owner=user).order_by(
+        Cow.objects.filter(owner=user)
+        .prefetch_related(
+            Prefetch(
+                "insemination_requests",
+                queryset=InseminationRequest.objects.order_by("-submitted_at"),
+            )
+        )
+        .order_by(
             "-needs_attention",
             "expected_calving_date",
             "name",
@@ -402,6 +1140,47 @@ def _build_summary_cards(cows, alerts):
             "tone": "rose",
         },
     ]
+
+
+def _build_follow_up_schedule_rows(cows):
+    today = timezone.localdate()
+    rows = []
+
+    for cow in cows:
+        if cow.expected_calving_date:
+            next_date = cow.expected_calving_date
+            next_label = "Expected calving"
+            if cow.is_nearing_calving():
+                detail = "Calving window is close. Keep this cow under closer watch."
+            else:
+                detail = "Keep this date visible so calving preparation stays on time."
+        elif cow.insemination_date:
+            next_date = cow.insemination_date + timedelta(days=28)
+            next_label = "Pregnancy check"
+            detail = "Check the cow around this date to confirm whether the service held."
+        elif cow.pregnancy_confirmation_date:
+            next_date = cow.pregnancy_confirmation_date
+            next_label = "Pregnancy confirmed"
+            detail = "Pregnancy is recorded. Add or confirm the calving timeline next."
+        else:
+            continue
+
+        day_delta = (next_date - today).days
+        rows.append(
+            {
+                "cow": cow,
+                "next_label": next_label,
+                "next_date": next_date,
+                "next_timing": _format_day_count(
+                    day_delta,
+                    future_label="to follow-up",
+                    past_label="since follow-up",
+                ),
+                "detail": detail,
+            }
+        )
+
+    return sorted(rows, key=lambda item: item["next_date"])
 
 
 def _build_quick_links():
@@ -580,21 +1359,21 @@ def alerts_view(request):
 @login_required
 @role_required("farmer")
 def reports_view(request):
-    return render(
+    context = _build_farmer_dashboard_context(
         request,
-        "farmers_dashboard/reports.html",
-        _build_farmer_dashboard_context(
-            request,
-            page_title="Follow-up Schedule | CowCalving",
-            page_eyebrow="Reports",
-            page_heading="Follow-up schedule",
-            page_intro="Keep follow-up dates and next review work visible for each cow.",
-            header_primary_action={
-                "label": "Open alerts",
-                "url": reverse("farmers_dashboard:alerts"),
-            },
-        ),
+        page_title="Follow-up Schedule | CowCalving",
+        page_eyebrow="Reports",
+        page_heading="Follow-up schedule",
+        page_intro="Keep follow-up dates and next review work visible for each cow.",
+        header_primary_action={
+            "label": "Open alerts",
+            "url": reverse("farmers_dashboard:alerts"),
+        },
     )
+    context["follow_up_rows"] = _build_follow_up_schedule_rows(
+        context["follow_up_items"]
+    )
+    return render(request, "farmers_dashboard/reports.html", context)
 
 
 @login_required
@@ -631,6 +1410,8 @@ def cow_register_view(request):
             # the user lands on the correct cow workflow page immediately after save.
             _apply_default_tracking_stage(cow)
             cow.save()
+            if cow.reproductive_status == Cow.REPRODUCTIVE_STATUS_NOT_INSEMINATED:
+                _ensure_open_insemination_request(cow)
             messages.success(request, f"{cow.name} was added to your herd.")
             return redirect("farmers_dashboard:cow_tracking", cow_id=cow.pk)
     else:
@@ -657,11 +1438,33 @@ def cow_register_view(request):
 @login_required
 @role_required("farmer")
 def cow_tracking_view(request, cow_id):
-    cow = get_object_or_404(Cow, owner=request.user, pk=cow_id)
+    requested_month = request.GET.get("month", "").strip()
+    cow = get_object_or_404(
+        Cow.objects.prefetch_related(
+            Prefetch(
+                "insemination_requests",
+                queryset=InseminationRequest.objects.order_by("-submitted_at"),
+            ),
+            Prefetch(
+                "reproductive_events",
+                queryset=ReproductiveEvent.objects.select_related("recorded_by"),
+            ),
+        ),
+        owner=request.user,
+        pk=cow_id,
+    )
+    selected_month = _parse_calendar_month(requested_month)
+    event_form = ReproductiveEventForm(
+        cow=cow,
+        initial={"event_date": timezone.localdate()},
+    )
 
     if request.method == "POST":
+        calendar_month_value = request.POST.get("calendar_month", "").strip()
         next_stage = request.POST.get("tracking_stage", "").strip()
         toggle_attention = request.POST.get("toggle_attention")
+        request_insemination = request.POST.get("request_insemination")
+        record_event = request.POST.get("record_event")
 
         if next_stage and next_stage in dict(Cow.TRACKING_STAGE_CHOICES):
             cow.tracking_stage = next_stage
@@ -670,7 +1473,7 @@ def cow_tracking_view(request, cow_id):
                 cow.needs_attention = False
             cow.save(update_fields=["tracking_stage", "is_pregnant", "needs_attention", "updated_at"])
             messages.success(request, f"{cow.name} tracking stage updated.")
-            return redirect("farmers_dashboard:cow_tracking", cow_id=cow.pk)
+            return redirect(_build_tracking_redirect(cow.pk, calendar_month_value))
 
         if toggle_attention:
             cow.needs_attention = not cow.needs_attention
@@ -679,16 +1482,41 @@ def cow_tracking_view(request, cow_id):
                 request,
                 f'{cow.name} is now marked as {"needing attention" if cow.needs_attention else "stable"}.',
             )
-            return redirect("farmers_dashboard:cow_tracking", cow_id=cow.pk)
+            return redirect(_build_tracking_redirect(cow.pk, calendar_month_value))
 
-    stage_options = [
-        {
-            "value": value,
-            "label": label,
-            "is_active": cow.tracking_stage == value,
-        }
-        for value, label in TRACKING_STEPS
-    ]
+        if request_insemination:
+            request_record = _ensure_open_insemination_request(cow)
+            if request_record:
+                messages.success(
+                    request,
+                    f"Insemination support has been requested for {cow.name}.",
+                )
+            else:
+                messages.info(
+                    request,
+                    "This cow is no longer in the request stage.",
+                )
+            return redirect(_build_tracking_redirect(cow.pk, calendar_month_value))
+
+        if record_event:
+            event_form = ReproductiveEventForm(request.POST, cow=cow)
+            if event_form.is_valid():
+                with transaction.atomic():
+                    event = _save_reproductive_event(
+                        cow,
+                        recorded_by=request.user,
+                        event_type=event_form.cleaned_data["event_type"],
+                        event_date=event_form.cleaned_data["event_date"],
+                        notes=event_form.cleaned_data["notes"],
+                    )
+                messages.success(
+                    request,
+                    f"{event.get_event_type_display()} saved for {cow.name}.",
+                )
+                return redirect(_build_tracking_redirect(cow.pk, calendar_month_value))
+
+    stage_options = _build_stage_options(cow)
+    tracking_calendar = _build_tracking_calendar(cow, focus_date=selected_month)
 
     return render(
         request,
@@ -706,6 +1534,14 @@ def cow_tracking_view(request, cow_id):
             extra_context={
                 "cow": cow,
                 "stage_options": stage_options,
+                "active_insemination_request": cow.active_insemination_request,
+                "tracking_highlights": _build_tracking_highlights(cow),
+                "tracking_calendar": tracking_calendar,
+                "event_form": event_form,
+                "tracking_form_action": _build_tracking_redirect(
+                    cow.pk,
+                    tracking_calendar["month_value"],
+                ),
             },
         ),
     )

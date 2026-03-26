@@ -19,6 +19,7 @@
 
         quickPromptsPanel.hidden = !isOpen;
         quickPromptsToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        quickPromptsToggle.textContent = isOpen ? "Hide prompts" : "Show prompts";
     }
 
     function setStatus(message, isError = false) {

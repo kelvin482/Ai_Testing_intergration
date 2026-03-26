@@ -21,6 +21,9 @@ Act as a senior software engineer.
 - Frontend and template work must be responsive by default and verified across small, medium, and large viewport layouts.
 - For website and template UI work in this repository, use Tailwind CSS as the default styling system unless the user explicitly requests a different approach.
 - For this hackathon project, optimize for a strong end-to-end demo: fewer polished flows, simpler interfaces, and clearly useful outcomes beat feature breadth.
+- For dashboard and workflow design, wireframe first, then choose layout, then define color roles, then implement visuals; do not jump straight to high-fidelity styling.
+- For dashboard and workflow design, research best-in-class reference designs first and intentionally borrow the strongest patterns before customizing them to the product's workflow and brand.
+- Remove non-essential information aggressively; every field, label, panel, and paragraph must justify its presence in the current workflow.
 - Ask clarification questions if requirements are unclear.
 - Provide solutions that can run with minimal modification.
 - Preserve project structure and conventions; do not move/rename files or modules unless explicitly requested.
@@ -45,14 +48,67 @@ Always follow a roadmap and break work into small tasks.
 3. Write a short implementation roadmap (small, ordered tasks).
 4. Execute one task at a time.
 5. Validate after each task.
-6. Run final end-to-end checks.
-7. Summarize what changed, what was verified, and any open risks.
+6. Only move to the next roadmap slice after the current slice is coherent, verified, and not overloaded with extra detail.
+7. Run final end-to-end checks.
+8. Summarize what changed, what was verified, and any open risks.
 
 ## Hackathon Product Focus
 - Default to one high-value workflow per page rather than many low-confidence cards or sections.
 - Prefer working actions, realistic data flow, and community relevance over decorative or speculative features.
 - Each page should answer one main user question and expose only the actions needed for that workflow.
 - When choosing between multiple ideas, prioritize the one that is easiest to demo clearly and most likely to solve a real farmer or veterinary pain point.
+- Prefer less but better: one clean working slice is more valuable than several rushed partial features.
+
+## UI and Dashboard Design Workflow
+Use this workflow for every new page, redesign, or major layout update.
+
+1. Define the page job in one sentence.
+2. Identify the primary user action and the one to three supporting actions.
+3. Research best-in-class references before designing:
+   - review strong examples for the same workflow type
+   - extract the useful layout, hierarchy, and interaction patterns
+   - adapt patterns intentionally instead of copying screens blindly
+4. Create a low-fidelity wireframe first:
+   - outline hierarchy
+   - choose the main work surface
+   - place navigation, status, and actions before styling
+5. Choose the layout pattern that best fits the task:
+   - list for queues and alerts
+   - timeline for progress and history
+   - split panel for browse-and-detail workflows
+   - table for dense comparison
+   - calendar for schedules and due dates
+   - card groups only when each item truly needs independent visual separation
+6. Apply progressive disclosure:
+   - show only the information needed for the next decision
+   - move secondary detail to drill-down pages, drawers, or expandable sections
+   - remove labels, helper text, and sections that repeat what the layout already makes clear
+7. Define a semantic color system before styling:
+   - one dominant brand hue
+   - one supporting accent
+   - neutral background and surface colors
+   - dedicated success, warning, and danger colors
+8. Use color intentionally:
+   - reserve high-contrast or warm colors for urgency and calls to action
+   - keep large surfaces calm and neutral
+   - do not let every section compete for attention
+9. Avoid AI-generic visual patterns:
+   - do not default to oversized hero blocks inside dashboards
+   - do not fill pages with many equally weighted cards
+   - do not use decorative gradients or accent colors without functional meaning
+10. Verify accessibility and clarity:
+   - normal text should meet at least 4.5:1 contrast
+   - large text should meet at least 3:1 contrast
+   - important controls and status states should not rely on color alone
+11. Only after the wireframe and color roles are settled should high-fidelity implementation begin.
+
+## Dashboard Layout Guardrails
+- Start with one primary work area per page and add secondary sections only if they clearly support the same workflow.
+- Keep dashboard homepages lightweight: one summary row is acceptable, but the main area should still be action-oriented rather than a wall of cards.
+- Prefer one summary row plus one main list/timeline/table over multiple stacked card sections.
+- Use repetition carefully: if several sections share the same visual weight, the page will feel machine-generated and hard to scan.
+- When a screen starts to need too many cards, split the workflow into dedicated pages instead of compressing everything into one overview.
+- If a screen still feels busy after layout cleanup, remove information before adding new UI structure.
 
 ## Error-Check Policy
 Always check for errors before declaring completion.

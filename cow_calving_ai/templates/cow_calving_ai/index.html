@@ -52,12 +52,15 @@
         <section class="chat-shell {% if embedded %}embedded-shell h-full rounded-none border-0 shadow-none{% else %}rounded-[2rem] border border-dusk/10 bg-white/90 shadow-soft{% endif %} overflow-hidden">
             {% if embedded %}
                 <header class="embedded-header border-b border-dusk/10">
-                    <div class="workspace-hero workspace-hero-embedded">
-                        <div class="assistant-logo-lockup">
-                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-12 w-12 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
-                            <h1 class="assistant-title">Cow Calving Assistant</h1>
+                    <div class="workspace-bar workspace-bar-embedded">
+                        <div class="workspace-brand">
+                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark assistant-brand-mark-compact" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-10 w-10 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
+                            <div class="workspace-brand-copy">
+                                <h1 class="assistant-title assistant-title-compact">Cow Calving Assistant</h1>
+                                <p class="workspace-subtitle">Ask, read the reply, then take the next farm step.</p>
+                            </div>
                         </div>
-                        <div class="hero-meta">
+                        <div class="hero-meta hero-meta-compact">
                             <span class="presence-pill">
                                 <span class="presence-dot" aria-hidden="true"></span>
                                 Online
@@ -68,7 +71,11 @@
                 </header>
 
                 <section class="chat-stage embedded-chat-stage">
-                    <div class="prompt-toggle-bar border-b border-dusk/10">
+                    <div class="prompt-toolbar border-b border-dusk/10">
+                        <div class="prompt-toolbar-copy">
+                            <p class="prompt-toolbar-eyebrow">Quick prompts</p>
+                            <p class="prompt-toggle-note">Starter ideas for common farm questions.</p>
+                        </div>
                         <button
                             type="button"
                             class="prompt-toggle"
@@ -76,9 +83,8 @@
                             aria-expanded="false"
                             aria-controls="quick-prompts-panel"
                         >
-                            Quick prompts
+                            Show prompts
                         </button>
-                        <p class="prompt-toggle-note">Starter ideas</p>
                     </div>
 
                     <div id="quick-prompts-panel" class="quick-prompts-panel" hidden>
@@ -91,13 +97,15 @@
                         </div>
                     </div>
 
-                    <div id="chat-log" class="chat-log embedded-chat-log px-3 sm:px-5">
-                        <article class="chat-row assistant chat-row-intro">
-                            <div class="bubble bubble-assistant bubble-assistant-intro markdown">
-                                <h3>Ask one clear farm question.</h3>
-                                <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
-                            </div>
-                        </article>
+                    <div class="chat-surface embedded-chat-surface">
+                        <div id="chat-log" class="chat-log embedded-chat-log px-3 sm:px-5">
+                            <article class="chat-row assistant chat-row-intro">
+                                <div class="bubble bubble-assistant bubble-assistant-intro markdown">
+                                    <h3>Ask one clear farm question.</h3>
+                                    <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
+                                </div>
+                            </article>
+                        </div>
                     </div>
 
                     <div class="embedded-interaction-dock">
@@ -116,12 +124,15 @@
                 </section>
             {% else %}
                 <header class="topbar px-5 sm:px-8 py-7 border-b border-dusk/10">
-                    <div class="workspace-hero">
-                        <div class="assistant-logo-lockup">
-                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-14 w-14 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
-                            <h1 class="assistant-title">Cow Calving Assistant</h1>
+                    <div class="workspace-bar">
+                        <div class="workspace-brand">
+                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark assistant-brand-mark-compact" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-11 w-11 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
+                            <div class="workspace-brand-copy">
+                                <h1 class="assistant-title assistant-title-compact">Cow Calving Assistant</h1>
+                                <p class="workspace-subtitle">Ask, review the response, and move to the next practical farm step.</p>
+                            </div>
                         </div>
-                        <div class="hero-meta">
+                        <div class="hero-meta hero-meta-compact">
                             <span class="presence-pill">
                                 <span class="presence-dot" aria-hidden="true"></span>
                                 Online
@@ -133,7 +144,11 @@
 
                 <div class="workspace-layout min-h-[78vh]">
                     <section class="workspace-pane">
-                        <div class="prompt-toggle-bar">
+                        <div class="prompt-toolbar">
+                            <div class="prompt-toolbar-copy">
+                                <p class="prompt-toolbar-eyebrow">Quick prompts</p>
+                                <p class="prompt-toggle-note">Starter ideas for common farm questions.</p>
+                            </div>
                             <button
                                 type="button"
                                 class="prompt-toggle"
@@ -141,9 +156,8 @@
                                 aria-expanded="false"
                                 aria-controls="quick-prompts-panel"
                             >
-                                Quick prompts
+                                Show prompts
                             </button>
-                            <p class="prompt-toggle-note">Starter ideas</p>
                         </div>
 
                         <div id="quick-prompts-panel" class="quick-prompts-panel" hidden>
@@ -156,13 +170,15 @@
                             </div>
                         </div>
 
-                        <div id="chat-log" class="chat-log px-3 sm:px-5">
-                            <article class="chat-row assistant chat-row-intro">
-                                <div class="bubble bubble-assistant bubble-assistant-intro markdown">
-                                    <h3>Ask one clear farm question.</h3>
-                                    <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
-                                </div>
-                            </article>
+                        <div class="chat-surface">
+                            <div id="chat-log" class="chat-log px-3 sm:px-5">
+                                <article class="chat-row assistant chat-row-intro">
+                                    <div class="bubble bubble-assistant bubble-assistant-intro markdown">
+                                        <h3>Ask one clear farm question.</h3>
+                                        <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
+                                    </div>
+                                </article>
+                            </div>
                         </div>
 
                         <form id="ai-form" class="composer" data-ai-endpoint="{% url 'cow_calving_ai:ai_test' %}">

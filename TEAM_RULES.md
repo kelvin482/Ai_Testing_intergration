@@ -18,10 +18,21 @@
 - For role-based features, keep role definitions and dashboard routing scalable; do not hardcode business logic around a fixed set of roles in views, templates, or redirects.
 - Frontend and template changes must be responsive by default and checked against small, medium, and large screen layouts before completion.
 - For website and template UI work in this repository, use Tailwind CSS as the primary styling approach unless the user explicitly requests a different styling system.
+- For dashboard and workflow UI work, always start with a low-fidelity wireframe before visual styling or implementation details.
+- For dashboard and workflow UI work, always research strong real-world reference designs first and borrow proven layout patterns, hierarchy, and interaction ideas before creating a custom visual direction.
+- Every page must answer one main user question and support one main action; move secondary detail behind links, drawers, or dedicated pages instead of stacking many cards on one screen.
+- Avoid unnecessary information in interfaces, copy, components, and data display; if a detail does not help the user make the next decision, hide it, defer it, or remove it.
+- Avoid generic AI-looking layouts: do not default to repeated card grids, random accent colors, or decorative sections without workflow value.
+- Prefer human-centered layouts such as focused lists, timelines, split panels, tables, calendars, or step flows before adding more cards.
+- Use a small semantic color system with clear roles for primary action, support, success, warning, danger, and neutral surfaces; do not assign colors arbitrarily page by page.
+- Apply color theory intentionally: keep one dominant brand hue, one supporting accent, calm neutral surfaces, and strong contrast for critical actions and alerts.
+- Do not rely on color alone to communicate status; pair color with labels, icons, position, or shape.
+- Verify accessible contrast for text and key UI elements before completion.
 - For this hackathon project, prefer fewer working features over many partial features; prioritize clarity, demo reliability, and user value.
 - Ask clarifying questions when requirements are unclear.
 - Provide solutions that run with minimal modification.
 - Always use a roadmap and split work into small tasks.
+- Implement the roadmap one step at a time without rushing; finish and verify one meaningful slice before moving to the next.
 - Always run relevant checks and verify errors before completion.
 - Improve one page/workflow at a time; do not spread effort across many unfinished screens in a single pass.
 - For any persistent feature, plan the schema change up front, generate/review migrations, prefer additive changes first, and resolve migration conflicts intentionally instead of deleting migration files.

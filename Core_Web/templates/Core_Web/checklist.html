@@ -239,10 +239,10 @@
         <a href="{% url 'Core_Web:guide' %}#trouble" class="btn-outline">Open Troubleshooting</a>
       </div>
       <div class="teaser-card">
-        <h3>Use Support For Outside Help</h3>
-        <p>When the situation moves beyond routine preparation, use the support page to reach the right channel and
-          organize follow-up help quickly.</p>
-        <a href="{% url 'Core_Web:support' %}" class="btn-outline">Open Support</a>
+        <h3>Use The Guide When The Case Stops Being Routine</h3>
+        <p>When the situation moves beyond routine preparation, move to the guide quickly for warning signs,
+          troubleshooting, and the reminders that tell you to contact a veterinarian immediately.</p>
+        <a href="{% url 'Core_Web:guide' %}#trouble" class="btn-outline">Open Troubleshooting</a>
       </div>
     </div>
   </div>
@@ -286,7 +286,7 @@
   <div class="where-next">
     <div class="main-wrap">
       <h2>Use The Other Pages When Needed</h2>
-      <div class="next-grid">
+      <div class="next-grid next-grid--three">
         <a href="{% url 'Core_Web:home' %}" class="next-card">
           <div class="next-card-icon">&#8962;</div>
           <div class="next-card-body">
@@ -308,25 +308,17 @@
             <p>Stay on this page for preparation, supplies, and practical reminders.</p>
           </div>
         </a>
-        <a href="{% url 'Core_Web:support' %}" class="next-card">
-          <div class="next-card-icon">&#128222;</div>
-          <div class="next-card-body">
-            <h3>Support</h3>
-            <p>Use support channels when the issue needs outside help or follow-up coordination.</p>
-          </div>
-        </a>
       </div>
     </div>
   </div>
 
   <div class="cta-strip" style="background: linear-gradient(135deg, var(--green-dark), var(--green-light));">
     <h2>Keep This Checklist Close During The Transition Period</h2>
-    <p>Use the checklist for action, the guide for detail, and the support page when the case moves beyond routine
-      preparation or follow-up.
+    <p>Use the checklist for action and the guide for detailed warnings, troubleshooting, and field decision support.
     </p>
     <div class="cta-btns">
       <a href="{% url 'Core_Web:guide' %}" class="cta-btn-primary">Open Guide</a>
-      <a href="{% url 'Core_Web:support' %}" class="cta-btn-secondary">Get Support</a>
+      <a href="{% url 'Core_Web:guide' %}#trouble" class="cta-btn-secondary">See Warning Signs</a>
     </div>
   </div>
 
@@ -348,7 +340,6 @@
           <li><a href="{% url 'Core_Web:home' %}">Home</a></li>
           <li><a href="{% url 'Core_Web:guide' %}">Guide</a></li>
           <li><a href="{% url 'Core_Web:checklist' %}">Checklist</a></li>
-          <li><a href="{% url 'Core_Web:support' %}">Support</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -366,8 +357,8 @@
         <ul>
           <li><a href="{% url 'Core_Web:checklist' %}#checklist">Season Checklist</a></li>
           <li><a href="{% url 'Core_Web:checklist' %}#faq">Checklist FAQ</a></li>
-          <li><a href="{% url 'Core_Web:support' %}#support-team">Support Options</a></li>
-          <li><a href="{% url 'Core_Web:support' %}#support-faq">Support FAQ</a></li>
+          <li><a href="{% url 'Core_Web:guide' %}#trouble">Troubleshooting</a></li>
+          <li><a href="{% url 'Core_Web:guide' %}#faq">Guide FAQ</a></li>
         </ul>
       </div>
     </div>

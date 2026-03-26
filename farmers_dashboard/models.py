@@ -5,6 +5,128 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 
 
+class InseminationRequest(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_ACCEPTED = "accepted"
+    STATUS_COMPLETED = "completed"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_ACCEPTED, "Accepted"),
+        (STATUS_COMPLETED, "Completed"),
+        (STATUS_CANCELLED, "Cancelled"),
+    ]
+
+    cow = models.ForeignKey(
+        "Cow",
+        on_delete=models.CASCADE,
+        related_name="insemination_requests",
+    )
+    farmer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="insemination_requests",
+    )
+    service_type = models.CharField(
+        max_length=32,
+        choices=[
+            ("artificial_insemination", "Artificial insemination"),
+            ("natural_service", "Natural service"),
+        ],
+        blank=True,
+        default="",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+    )
+    request_note = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"{self.cow.name} insemination request ({self.get_status_display()})"
+
+    @property
+    def is_open(self):
+        return self.status in {self.STATUS_PENDING, self.STATUS_ACCEPTED}
+
+    @property
+    def status_tone(self):
+        if self.status == self.STATUS_ACCEPTED:
+            return "sky"
+        if self.status == self.STATUS_COMPLETED:
+            return "emerald"
+        if self.status == self.STATUS_CANCELLED:
+            return "slate"
+        return "amber"
+
+    @property
+    def next_step_text(self):
+        if self.status == self.STATUS_ACCEPTED:
+            return "A provider has picked up the request. Keep the cow ready for service."
+        if self.status == self.STATUS_COMPLETED:
+            return "Service is complete. Record the insemination date to continue the tracker."
+        if self.status == self.STATUS_CANCELLED:
+            return "This request is closed. Create a fresh request if support is still needed."
+        return "Your request is waiting for follow-up. Keep heat signs and timing visible."
+
+
+class ReproductiveEvent(models.Model):
+    EVENT_HEAT_OBSERVED = "heat_observed"
+    EVENT_INSEMINATION_RECORDED = "insemination_recorded"
+    EVENT_PREGNANCY_CONFIRMED = "pregnancy_confirmed"
+    EVENT_PREGNANCY_NOT_KEPT = "pregnancy_not_kept"
+    EVENT_CALVED = "calved"
+
+    EVENT_TYPE_CHOICES = [
+        (EVENT_HEAT_OBSERVED, "Heat observed"),
+        (EVENT_INSEMINATION_RECORDED, "Insemination recorded"),
+        (EVENT_PREGNANCY_CONFIRMED, "Pregnancy confirmed"),
+        (EVENT_PREGNANCY_NOT_KEPT, "Pregnancy not kept"),
+        (EVENT_CALVED, "Calved"),
+    ]
+
+    cow = models.ForeignKey(
+        "Cow",
+        on_delete=models.CASCADE,
+        related_name="reproductive_events",
+    )
+    recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reproductive_events",
+    )
+    event_type = models.CharField(max_length=32, choices=EVENT_TYPE_CHOICES)
+    event_date = models.DateField()
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-event_date", "-created_at"]
+
+    def __str__(self):
+        return f"{self.cow.name} {self.get_event_type_display()} ({self.event_date:%d %b %Y})"
+
+    @property
+    def tone(self):
+        if self.event_type == self.EVENT_HEAT_OBSERVED:
+            return "orange"
+        if self.event_type == self.EVENT_INSEMINATION_RECORDED:
+            return "sky"
+        if self.event_type == self.EVENT_PREGNANCY_CONFIRMED:
+            return "emerald"
+        if self.event_type == self.EVENT_PREGNANCY_NOT_KEPT:
+            return "rose"
+        return "amber"
+
+
 class Cow(models.Model):
     BREED_FRIESIAN = "friesian"
     BREED_AYRSHIRE = "ayrshire"
@@ -118,6 +240,17 @@ class Cow(models.Model):
     def __str__(self):
         return f"{self.name} ({self.cow_number})"
 
+    @cached_property
+    def active_insemination_request(self):
+        prefetched_requests = getattr(self, "_prefetched_objects_cache", {}).get(
+            "insemination_requests"
+        )
+        request_list = prefetched_requests if prefetched_requests is not None else self.insemination_requests.all()
+        for request in request_list:
+            if request.is_open:
+                return request
+        return None
+
     def is_due_this_month(self):
         if not self.expected_calving_date:
             return False
@@ -166,6 +299,10 @@ class Cow(models.Model):
     def status_label(self):
         if self.needs_attention:
             return "Needs attention"
+        if self.tracking_stage == self.STAGE_ACTIVE_LABOR:
+            return "Active labor"
+        if self.tracking_stage == self.STAGE_POST_CALVING:
+            return "Post-calving"
         if self.is_nearing_calving():
             return "Nearing calving"
         if self.tracking_stage == self.STAGE_INSEMINATED:
@@ -176,7 +313,16 @@ class Cow(models.Model):
 
     @property
     def summary_text(self):
+        if self.tracking_stage == self.STAGE_POST_CALVING:
+            return "Calving recorded and recovery follow-up can continue"
+        if self.tracking_stage == self.STAGE_ACTIVE_LABOR:
+            return "Labour is active and needs close observation"
         if self.reproductive_status == self.REPRODUCTIVE_STATUS_NOT_INSEMINATED:
+            if self.active_insemination_request:
+                submitted_on = timezone.localtime(
+                    self.active_insemination_request.submitted_at
+                ).date()
+                return f"Insemination request sent {submitted_on:%d %b %Y}"
             if self.last_heat_date:
                 return f"Last heat observed {self.last_heat_date:%d %b %Y}"
             return "Ready for insemination planning"
@@ -198,6 +344,8 @@ class Cow(models.Model):
     def alert_category(self):
         if self.needs_attention:
             return "Needs attention"
+        if self.tracking_stage == self.STAGE_ACTIVE_LABOR:
+            return "Active labor"
         if self.is_nearing_calving():
             return "Nearing calving"
         if self.tracking_stage == self.STAGE_INSEMINATED:
@@ -208,10 +356,14 @@ class Cow(models.Model):
 
     @property
     def next_action_text(self):
+        if self.active_insemination_request:
+            return self.active_insemination_request.next_step_text
         if self.needs_attention:
             return "Review the cow and open support if the issue continues."
         if self.tracking_stage == self.STAGE_ACTIVE_LABOR:
             return "Track labour progress closely and prepare for escalation."
+        if self.tracking_stage == self.STAGE_POST_CALVING:
+            return "Monitor recovery, keep the calf safe, and record the next heat when ready."
         if self.tracking_stage == self.STAGE_INSEMINATED:
             return "Keep watch after service and plan the pregnancy check."
         if self.is_nearing_calving():
