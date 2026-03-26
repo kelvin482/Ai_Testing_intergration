@@ -6,8 +6,20 @@
     const cowIdInput = document.getElementById("cow-id");
     const statusEl = document.getElementById("status");
     const quickQuestions = document.getElementById("quick-questions");
+    const quickPromptsToggle = document.querySelector("[data-quick-prompts-toggle]");
+    const quickPromptsPanel = document.getElementById("quick-prompts-panel");
     const chatLog = document.getElementById("chat-log");
     const aiEndpoint = form?.dataset.aiEndpoint || "/app/ai/test/";
+    const initialChatMarkup = chatLog?.innerHTML || "";
+
+    function setQuickPromptsOpen(isOpen) {
+        if (!quickPromptsToggle || !quickPromptsPanel) {
+            return;
+        }
+
+        quickPromptsPanel.hidden = !isOpen;
+        quickPromptsToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
 
     function setStatus(message, isError = false) {
         statusEl.textContent = message;
@@ -94,13 +106,34 @@
         return html.join("");
     }
 
+    function buildAvatar(role) {
+        const avatar = document.createElement("div");
+        avatar.className = role === "assistant" ? "avatar avatar-assistant" : "avatar";
+        avatar.setAttribute("aria-hidden", "true");
+
+        avatar.innerHTML =
+            role === "assistant"
+                ? `
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M9 3.5h6M12 3.5v2.25M6.75 9.25h10.5c.97 0 1.75.78 1.75 1.75v5.25c0 .97-.78 1.75-1.75 1.75H6.75A1.75 1.75 0 0 1 5 16.25V11c0-.97.78-1.75 1.75-1.75Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <path d="M8.75 13h.01M15.25 13h.01M9.75 16h4.5M5 12 3.75 10.75M19 12l1.25-1.25" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    </svg>
+                `
+                : `
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 12a3.25 3.25 0 1 0 0-6.5 3.25 3.25 0 0 0 0 6.5Z" stroke="currentColor" stroke-width="1.7"></path>
+                        <path d="M5.5 19.25c0-3.04 2.92-5.5 6.5-5.5s6.5 2.46 6.5 5.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                    </svg>
+                `;
+
+        return avatar;
+    }
+
     function addMessage(role, content, isMarkdown = false, scrollMode = "end") {
         const row = document.createElement("article");
         row.className = `chat-row ${role}`;
 
-        const avatar = document.createElement("div");
-        avatar.className = role === "assistant" ? "avatar avatar-assistant" : "avatar";
-        avatar.textContent = role === "assistant" ? "AI" : "YOU";
+        const avatar = buildAvatar(role);
 
         const bubble = document.createElement("div");
         bubble.className =
@@ -127,9 +160,7 @@
         const row = document.createElement("article");
         row.className = "chat-row assistant";
 
-        const avatar = document.createElement("div");
-        avatar.className = "avatar avatar-assistant";
-        avatar.textContent = "AI";
+        const avatar = buildAvatar("assistant");
 
         const bubble = document.createElement("div");
         bubble.className = "bubble bubble-assistant";
@@ -160,7 +191,7 @@
     function setLoading(isLoading) {
         submitBtn.disabled = isLoading;
         questionInput.disabled = isLoading;
-        submitBtn.textContent = isLoading ? "Thinking..." : "Send";
+        submitBtn.textContent = isLoading ? "Thinking..." : "Ask AI";
     }
 
     function autoresizeInput() {
@@ -243,15 +274,20 @@
     });
 
     clearBtn.addEventListener("click", () => {
-        chatLog.innerHTML = "";
-        addMessage(
-            "assistant",
-            "Chat cleared. Ask a new question whenever you are ready."
-        );
+        chatLog.innerHTML = initialChatMarkup;
         setStatus("Conversation cleared.");
+        setQuickPromptsOpen(false);
+        resetComposer();
+        questionInput.focus();
     });
 
-    quickQuestions.addEventListener("click", async (event) => {
+    quickPromptsToggle?.addEventListener("click", () => {
+        const isExpanded =
+            quickPromptsToggle.getAttribute("aria-expanded") === "true";
+        setQuickPromptsOpen(!isExpanded);
+    });
+
+    quickQuestions?.addEventListener("click", async (event) => {
         const target = event.target;
         if (!(target instanceof HTMLButtonElement)) {
             return;
@@ -261,9 +297,38 @@
         if (!question) {
             return;
         }
+
+        setQuickPromptsOpen(false);
         await submitQuestion(question);
     });
 
+    // Match the familiar chat pattern where Enter sends and Shift+Enter keeps
+    // a manual line break for longer notes.
+    questionInput.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" || event.shiftKey) {
+            return;
+        }
+
+        event.preventDefault();
+        form.requestSubmit();
+    });
+
     questionInput.addEventListener("input", autoresizeInput);
+    document.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof Element) || !quickPromptsPanel || quickPromptsPanel.hidden) {
+            return;
+        }
+
+        if (
+            target.closest("[data-quick-prompts-toggle]") ||
+            target.closest("#quick-prompts-panel")
+        ) {
+            return;
+        }
+
+        setQuickPromptsOpen(false);
+    });
     autoresizeInput();
+    setQuickPromptsOpen(false);
 })();

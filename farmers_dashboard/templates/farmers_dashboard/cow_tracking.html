@@ -1,0 +1,80 @@
+{% extends "farmers_dashboard/base_dashboard.html" %}
+
+{% block farmer_dashboard_content %}
+    <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <article class="rounded-[2rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:px-7 sm:py-7">
+            <div class="flex items-start gap-4">
+                {% if cow.photo_url %}
+                    <img src="{{ cow.photo_url }}" alt="{{ cow.name }}" class="h-24 w-24 rounded-[1.5rem] object-cover">
+                {% else %}
+                    <div class="flex h-24 w-24 items-center justify-center rounded-[1.5rem] bg-emerald-50 text-5xl">&#128004;</div>
+                {% endif %}
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">{{ cow.cow_number }}</p>
+                    <h2 class="mt-2 text-3xl tracking-tight text-slate-950 font-display">{{ cow.name }}</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">{{ cow.get_breed_display }}</p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% elif cow.status_tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                            {{ cow.status_label }}
+                        </span>
+                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                            {{ cow.get_tracking_stage_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Summary</p>
+                    <p class="mt-2 text-sm leading-7 text-slate-700">{{ cow.summary_text }}</p>
+                </div>
+                <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Expected calving</p>
+                    <p class="mt-2 text-sm leading-7 text-slate-700">
+                        {% if cow.expected_calving_date %}{{ cow.expected_calving_date|date:"d M Y" }}{% else %}Not added yet{% endif %}
+                    </p>
+                </div>
+                <div class="rounded-[1.4rem] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Notes</p>
+                    <p class="mt-2 text-sm leading-7 text-slate-700">{{ cow.notes|default:"No notes added yet." }}</p>
+                </div>
+            </div>
+        </article>
+
+        <article class="rounded-[2rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:px-7 sm:py-7">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Tracking the calving process</p>
+                <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Update the current stage</h2>
+            </div>
+
+            <div class="mt-6 grid gap-3 md:grid-cols-2">
+                {% for option in stage_options %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="tracking_stage" value="{{ option.value }}">
+                        <button type="submit" class="w-full rounded-[1.2rem] border px-4 py-4 text-left transition {% if option.is_active %}border-emerald-300 bg-emerald-50 text-emerald-900{% else %}border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50{% endif %}">
+                            <span class="block text-sm font-semibold">{{ option.label }}</span>
+                            <span class="mt-1 block text-sm text-slate-600">
+                                {% if option.value == "registered" %}Cow profile created and ready for tracking.{% elif option.value == "pregnant" %}Pregnancy confirmed and follow-up should stay visible.{% elif option.value == "nearing_calving" %}Calving window is close and the cow needs more watch.{% elif option.value == "active_labor" %}Active labour has started and progress needs monitoring.{% else %}Calving completed and the cow moves into follow-up.{% endif %}
+                            </span>
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="toggle_attention" value="1">
+                    <button type="submit" class="w-full rounded-[1rem] {% if cow.needs_attention %}border border-rose-200 bg-rose-50 text-rose-700{% else %}bg-[#14532d] text-white{% endif %} px-5 py-3 text-sm font-semibold transition {% if cow.needs_attention %}hover:bg-rose-100{% else %}hover:bg-[#114524]{% endif %}">
+                        {% if cow.needs_attention %}Mark Stable{% else %}Mark Needs Attention{% endif %}
+                    </button>
+                </form>
+                <a href="{% url 'Core_Web:support' %}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50">
+                    Open support
+                </a>
+            </div>
+        </article>
+    </section>
+{% endblock %}

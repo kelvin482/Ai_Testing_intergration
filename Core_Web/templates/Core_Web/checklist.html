@@ -5,9 +5,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CowCalving.farm - Calving Checklist</title>
+  <title>CowCalving.farm - Calving And Transition Checklist</title>
   <meta name="description"
-    content="Use the CowCalving.farm checklist page for calving preparation, supply checks, team readiness, and fast practical reminders.">
+    content="Use the CowCalving.farm checklist page for dry-off planning, calving preparation, supply checks, team readiness, and practical first-day reminders.">
   <link rel="stylesheet" href="{% static 'Core_Web/styles.css' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}">
   <style>
     .auth-context {
@@ -26,35 +26,7 @@
 
 <body>
 
-  <nav>
-    <a href="{% url 'Core_Web:home' %}" class="nav-logo">
-      <div class="logo-icon" aria-hidden="true">
-        <span class="logo-icon-shell">
-          <span class="logo-mark">{% include "includes/cow_calving_logo_mark.html" %}</span>
-        </span>
-      </div>
-      <span class="logo-text">CowCalving.farm</span>
-    </a>
-    <div class="nav-shell">
-      <ul class="nav-links">
-        <li><a href="{% url 'Core_Web:home' %}">Home</a></li>
-        <li><a href="{% url 'Core_Web:guide' %}">Guide</a></li>
-        <li><a href="{% url 'Core_Web:checklist' %}" class="nav-current">Checklist</a></li>
-      </ul>
-      <div class="nav-auth">
-        {% if request.user.is_authenticated %}
-          <a href="{{ dashboard_url|default:profile_url }}" class="nav-auth-primary">{{ dashboard_label|default:"Open Dashboard" }}</a>
-          <form method="post" action="{% url 'accounts:logout' %}" class="nav-auth-form">
-            {% csrf_token %}
-            <button type="submit">Sign out</button>
-          </form>
-        {% else %}
-          <a href="{% url 'accounts:login' %}" class="nav-auth-primary">Sign In</a>
-          <a href="{% url 'accounts:signup' %}" class="nav-auth-link">Create Account</a>
-        {% endif %}
-      </div>
-    </div>
-  </nav>
+  {% include "Core_Web/includes/public_site_nav.html" %}
 
   <div class="auth-context">
     <span>Farmer Checklist</span>
@@ -70,28 +42,28 @@
 
   <div class="features-section">
     <div class="main-wrap">
-      <h2>What This Page Helps You Do</h2>
-      <p class="subtitle">Short, action-heavy reminders built for work in the field.</p>
+      <h2>What This Checklist Helps You Control</h2>
+      <p class="subtitle">A practical page for dry-off, calving readiness, calf-care preparation, and clear field follow-through.</p>
       <div class="features-grid">
         <div class="feature-card">
           <div class="feature-icon">&#127969;</div>
           <h3>Prepare The Pen</h3>
-          <p>Confirm clean bedding, lighting, space, and safe access before labor starts.</p>
+          <p>Confirm clean bedding, lighting, space, and safe access before the due window begins.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#129533;</div>
           <h3>Stock The Toolkit</h3>
-          <p>Keep lubricant, chains, iodine, bottles, and a feeder ready before you need them.</p>
+          <p>Keep lubricant, chains, iodine, bottles, and a feeder ready before the first difficult case appears.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128221;</div>
           <h3>Track Key Records</h3>
-          <p>Record due dates, cow condition, and calf observations so decisions are faster and clearer.</p>
+          <p>Record service dates, expected calving dates, and dry-off timing so decisions are faster and clearer.</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128137;</div>
           <h3>Escalate Early</h3>
-          <p>Use the guide and support pages quickly when labor stalls or the calf appears weak.</p>
+          <p>Use the guide and support pages quickly when labor stalls, timing is unclear, or calf recovery looks poor.</p>
         </div>
       </div>
     </div>
@@ -102,9 +74,9 @@
       <div class="checklist-inner">
         <div>
           <div class="section-tag">Pre-Calving</div>
-          <h2>Farmer's Calving Season Checklist</h2>
-          <p>Use this checklist to prepare for calving season. Tick each item off before a single calf arrives on your
-            farm so the team is not improvising under pressure.</p>
+          <h2>Calving And Transition Checklist For Smallholder Farms</h2>
+          <p>Use this checklist before the expected calving window begins. Tick each item off early so the farm is not
+            improvising around dry-off, late pregnancy, or the first hours after birth.</p>
 
           <div class="check-group">
             <div class="check-group-title">Facilities</div>
@@ -128,6 +100,42 @@
           </div>
 
           <div class="check-group">
+            <div class="check-group-title">Records And Reproductive Planning</div>
+            <div class="check-items">
+              <div class="check-item">
+                <div class="check-box"></div>Expected calving dates recorded per cow
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Last insemination or breeding records updated
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Dry-off dates planned about 45-60 days before calving
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Vet and service-provider contacts saved and visible
+              </div>
+            </div>
+          </div>
+
+          <div class="check-group">
+            <div class="check-group-title">Transition Cow Readiness</div>
+            <div class="check-items">
+              <div class="check-item">
+                <div class="check-box"></div>Pre-calving vaccinations completed on time
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Dry cow nutrition programme in place
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Feed and clean water access protected for close-up cows
+              </div>
+              <div class="check-item">
+                <div class="check-box"></div>Body condition scored at dry-off and at calving
+              </div>
+            </div>
+          </div>
+
+          <div class="check-group">
             <div class="check-group-title">Colostrum And Feeding</div>
             <div class="check-items">
               <div class="check-item">
@@ -140,25 +148,7 @@
                 <div class="check-box"></div>Clean bottles, nipples, and buckets ready
               </div>
               <div class="check-item">
-                <div class="check-box"></div>Brix refractometer or colostrometer available
-              </div>
-            </div>
-          </div>
-
-          <div class="check-group">
-            <div class="check-group-title">Cow Health</div>
-            <div class="check-items">
-              <div class="check-item">
-                <div class="check-box"></div>Pre-calving vaccinations completed on time
-              </div>
-              <div class="check-item">
-                <div class="check-box"></div>Dry cow nutrition programme in place
-              </div>
-              <div class="check-item">
-                <div class="check-box"></div>Expected calving dates recorded per cow
-              </div>
-              <div class="check-item">
-                <div class="check-box"></div>Body condition scored at dry-off and at calving
+                <div class="check-box"></div>If available, a Brix refractometer or colostrometer is ready
               </div>
             </div>
           </div>
@@ -184,22 +174,23 @@
 
         <div class="toolkit-box">
           <h3>Calving Toolkit</h3>
-          <p>Stock these supplies before calving season. Never be searching for equipment during an emergency.</p>
+          <p>Stock these supplies before calving season. A professional setup reduces delay, contamination, and panic
+            when a difficult case appears.</p>
 
           <div class="toolkit-item">
             <div class="toolkit-emoji">1</div>
             <div>
               <div class="toolkit-name">OB Lubricant</div>
-              <div class="toolkit-desc">Essential before any manual intervention. Reduces trauma to the cow and calf
-                during assisted deliveries.</div>
+              <div class="toolkit-desc">Essential before any manual intervention. Adequate lubrication reduces trauma to
+                both the cow and the calf during assisted delivery.</div>
             </div>
           </div>
           <div class="toolkit-item">
             <div class="toolkit-emoji">2</div>
             <div>
               <div class="toolkit-name">Obstetric Chains And Handles</div>
-              <div class="toolkit-desc">Store clean and ready. Apply in a half-hitch above and below the fetlock and do
-                not pull with excessive force.</div>
+              <div class="toolkit-desc">Store clean and ready. Apply correctly above and below the fetlock and avoid
+                forceful pulling without proper assessment.</div>
             </div>
           </div>
           <div class="toolkit-item">
@@ -214,8 +205,8 @@
             <div class="toolkit-emoji">4</div>
             <div>
               <div class="toolkit-name">Esophageal Tube Feeder</div>
-              <div class="toolkit-desc">For administering colostrum to calves that cannot suckle. Practice the technique
-                before calving season begins, not during an emergency.</div>
+              <div class="toolkit-desc">For calves that cannot suckle promptly. Practice the technique before calving
+                season begins, not in the middle of an emergency.</div>
             </div>
           </div>
           <div class="toolkit-item">
@@ -263,6 +254,11 @@
       <p>These are short reminders for the moment when you need quick answers, not the full training material.</p>
 
       <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-q">Why should I record the dry-off date? <span class="faq-arrow">&#9660;</span></div>
+          <div class="faq-a">The dry-off date helps the farm protect udder recovery, calf growth, and the next
+            lactation. Without a recorded date, cows are easier to dry off too early, too late, or inconsistently.</div>
+        </div>
         <div class="faq-item">
           <div class="faq-q">When should the pen be ready? <span class="faq-arrow">&#9660;</span></div>
           <div class="faq-a">Prepare the calving area before the expected due window begins. The goal is to avoid
@@ -324,8 +320,9 @@
   </div>
 
   <div class="cta-strip" style="background: linear-gradient(135deg, var(--green-dark), var(--green-light));">
-    <h2>Keep The Checklist Close During Calving Season</h2>
-    <p>Use the checklist for action, the guide for detail, and the support page when you need help beyond routine work.
+    <h2>Keep This Checklist Close During The Transition Period</h2>
+    <p>Use the checklist for action, the guide for detail, and the support page when the case moves beyond routine
+      preparation or follow-up.
     </p>
     <div class="cta-btns">
       <a href="{% url 'Core_Web:guide' %}" class="cta-btn-primary">Open Guide</a>

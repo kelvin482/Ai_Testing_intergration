@@ -29,12 +29,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function closeMobileMenu() {
+    if (!mobileMenu || !mobileMenuToggle) return;
+    mobileMenu.classList.add('hidden');
+    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+
   dropdownToggles.forEach((toggle) => {
     toggle.addEventListener('click', (event) => {
       event.stopPropagation();
       const item = toggle.closest('.site-dropdown-item');
       const shouldOpen = !item?.classList.contains('open');
       closeDropdowns();
+      closeMobileMenu();
       if (shouldOpen && item) {
         item.classList.add('open');
         toggle.setAttribute('aria-expanded', 'true');
@@ -51,10 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeDropdowns();
-      if (mobileMenu && mobileMenuToggle) {
-        mobileMenu.classList.add('hidden');
-        mobileMenuToggle.setAttribute('aria-expanded', 'false');
-      }
+      closeMobileMenu();
     }
   });
 
@@ -63,6 +67,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const isOpen = !mobileMenu.classList.contains('hidden');
       mobileMenu.classList.toggle('hidden', isOpen);
       mobileMenuToggle.setAttribute('aria-expanded', String(!isOpen));
+      if (!isOpen) {
+        closeDropdowns();
+      }
+    });
+
+    mobileMenu.querySelectorAll('a, button[type="submit"]').forEach((link) => {
+      link.addEventListener('click', () => {
+        closeMobileMenu();
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 1024) {
+        closeMobileMenu();
+      }
     });
   }
 
@@ -93,8 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       event.preventDefault();
       closeDropdowns();
-      mobileMenu?.classList.add('hidden');
-      mobileMenuToggle?.setAttribute('aria-expanded', 'false');
+      closeMobileMenu();
 
       const navHeight = document.querySelector('nav')?.offsetHeight || 74;
       const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 16;

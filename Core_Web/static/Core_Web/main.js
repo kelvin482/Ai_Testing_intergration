@@ -5,6 +5,9 @@
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const mobileMenu = document.querySelector('[data-mobile-menu]');
+  const mobileMenuToggle = document.querySelector('[data-mobile-menu-toggle]');
+
   function getHashFromHref(href) {
     if (!href) return '';
     const hashIndex = href.indexOf('#');
@@ -340,6 +343,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function closeMobileMenu() {
+    if (!mobileMenu || !mobileMenuToggle) return;
+    mobileMenu.hidden = true;
+    mobileMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+
   dropdownToggles.forEach(toggle => {
     toggle.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -347,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!item) return;
       const isOpen = item.classList.contains('open');
       closeDropdowns();
+      closeMobileMenu();
       if (!isOpen) {
         item.classList.add('open');
         toggle.setAttribute('aria-expanded', 'true');
@@ -362,10 +372,32 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     closeDropdowns();
+    closeMobileMenu();
   });
 
   document.querySelectorAll('.nav-dropdown a').forEach(link => {
     link.addEventListener('click', () => closeDropdowns());
   });
+
+  if (mobileMenu && mobileMenuToggle) {
+    mobileMenuToggle.addEventListener('click', () => {
+      const isOpen = !mobileMenu.hidden;
+      mobileMenu.hidden = isOpen;
+      mobileMenuToggle.setAttribute('aria-expanded', String(!isOpen));
+      if (!isOpen) {
+        closeDropdowns();
+      }
+    });
+
+    mobileMenu.querySelectorAll('a, button[type="submit"]').forEach(link => {
+      link.addEventListener('click', () => closeMobileMenu());
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 900) {
+        closeMobileMenu();
+      }
+    });
+  }
 
 });

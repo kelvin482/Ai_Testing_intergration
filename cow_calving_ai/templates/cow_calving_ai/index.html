@@ -49,104 +49,118 @@
                 {% endfor %}
             </div>
         {% endif %}
-        <section class="chat-shell {% if embedded %}embedded-shell h-full rounded-none border-0 shadow-none{% else %}rounded-3xl border border-dusk/10 bg-white/90 backdrop-blur shadow-soft{% endif %} overflow-hidden">
+        <section class="chat-shell {% if embedded %}embedded-shell h-full rounded-none border-0 shadow-none{% else %}rounded-[2rem] border border-dusk/10 bg-white/90 shadow-soft{% endif %} overflow-hidden">
             {% if embedded %}
-                {# Embedded mode trims the standalone hero so the dashboard keeps
-                   the conversation and composer visible on smaller screens. #}
                 <header class="embedded-header border-b border-dusk/10">
-                    <div class="flex items-center justify-between gap-4">
-                        <div class="min-w-0">
-                            <p class="embedded-eyebrow">Dashboard assistant</p>
-                            <h1 class="embedded-title">Ask Cow Calving AI</h1>
+                    <div class="workspace-hero workspace-hero-embedded">
+                        <div class="assistant-logo-lockup">
+                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-12 w-12 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
+                            <h1 class="assistant-title">Cow Calving Assistant</h1>
                         </div>
-                        <p id="status" class="status-text status-normal embedded-status text-sm">Ready.</p>
-                    </div>
-                    <div class="embedded-brand-bar">
-                        {% include "includes/cow_calving_logo.html" with logo_wrap_class="inline-flex items-center gap-3" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-8 w-8 text-[#9f5b20]" logo_text_wrap_class="leading-none" logo_text_class="font-display text-[1.6rem] text-[#8f4e17]" logo_tagline_class="mt-0.5 text-xs italic text-[#b68459]" %}
-                        <p class="embedded-subtitle">Get a quick answer, then return to the next farm action.</p>
+                        <div class="hero-meta">
+                            <span class="presence-pill">
+                                <span class="presence-dot" aria-hidden="true"></span>
+                                Online
+                            </span>
+                            <p id="status" class="status-text status-normal embedded-status text-sm">Ready for your question.</p>
+                        </div>
                     </div>
                 </header>
 
                 <section class="chat-stage embedded-chat-stage">
+                    <div class="prompt-toggle-bar border-b border-dusk/10">
+                        <button
+                            type="button"
+                            class="prompt-toggle"
+                            data-quick-prompts-toggle
+                            aria-expanded="false"
+                            aria-controls="quick-prompts-panel"
+                        >
+                            Quick prompts
+                        </button>
+                        <p class="prompt-toggle-note">Starter ideas</p>
+                    </div>
+
+                    <div id="quick-prompts-panel" class="quick-prompts-panel" hidden>
+                        <div id="quick-questions" class="prompt-list prompt-grid prompt-list-embedded">
+                            <button class="option-chip option-chip-embedded" type="button" data-question="My cow hasn't shown heat in 45 days. What should I do?">No heat after 45 days</button>
+                            <button class="option-chip option-chip-embedded" type="button" data-question="What signs show the best insemination window for this cow?">Best insemination window</button>
+                            <button class="option-chip option-chip-embedded" type="button" data-question="Which labour signs mean I should call a vet immediately?">Urgent labour signs</button>
+                            <button class="option-chip option-chip-embedded" type="button" data-question="What should I monitor in the first 12 hours after calving?">First 12-hour monitoring</button>
+                            <button class="option-chip option-chip-embedded" type="button" data-question="How do I support a weak newborn calf in the first hour?">Weak calf support</button>
+                        </div>
+                    </div>
+
                     <div id="chat-log" class="chat-log embedded-chat-log px-3 sm:px-5">
-                        <article class="chat-row assistant">
-                            <div class="avatar avatar-assistant">AI</div>
-                            <div class="bubble bubble-assistant markdown">
-                                <h3>Welcome to Cow Calving AI</h3>
-                                <p>I can help with labour signs, risk alerts, and newborn calf support.</p>
-                                <ul>
-                                    <li>Choose a quick prompt to get started.</li>
-                                    <li>Ask a follow-up question to refine the next step.</li>
-                                </ul>
+                        <article class="chat-row assistant chat-row-intro">
+                            <div class="bubble bubble-assistant bubble-assistant-intro markdown">
+                                <h3>Ask one clear farm question.</h3>
+                                <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
                             </div>
                         </article>
                     </div>
 
-                    {# Keep prompts and the composer docked near the bottom so
-                       the panel behaves more like a modern chatbot workspace. #}
                     <div class="embedded-interaction-dock">
-                        <div class="embedded-prompt-strip border-t border-dusk/10">
-                            <div class="embedded-prompt-header">
-                                <h2 class="panel-title !text-left">Quick prompts</h2>
-                                <p class="text-xs uppercase tracking-[0.2em] text-[#9a9893]">Tap to start faster</p>
+                        <form id="ai-form" class="composer embedded-composer" data-ai-endpoint="{% url 'cow_calving_ai:ai_test' %}">
+                            <label class="sr-only" for="question">Question</label>
+                            <div class="composer-shell">
+                                <textarea id="question" name="q" rows="1" placeholder="Ask a farm question, for example: my cow hasn't shown heat in 45 days..." class="composer-input" required></textarea>
+                                <button id="submit-btn" type="submit" class="composer-primary">Ask AI</button>
                             </div>
-                            <div id="quick-questions" class="embedded-prompt-list">
-                                <button class="option-chip option-chip-embedded" type="button" data-question="What signs show this cow may calve within 24 hours?">24-hour calving signs</button>
-                                <button class="option-chip option-chip-embedded" type="button" data-question="What should I prepare in the calving pen before labor starts?">Calving pen checklist</button>
-                                <button class="option-chip option-chip-embedded" type="button" data-question="Which danger signs mean I should call a vet immediately during labor?">Emergency labor signs</button>
-                                <button class="option-chip option-chip-embedded" type="button" data-question="What should I monitor in the first 12 hours after calving?">First 12-hour monitoring</button>
-                                <button class="option-chip option-chip-embedded" type="button" data-question="How do I support a weak newborn calf in the first hour?">Weak calf support</button>
+                            <div class="embedded-composer-footer">
+                                <p class="composer-note">Short, direct questions usually work best.</p>
+                                <button id="clear-btn" type="button" class="composer-secondary">Clear chat</button>
                             </div>
-                        </div>
-
-                    <form id="ai-form" class="composer embedded-composer" data-ai-endpoint="{% url 'cow_calving_ai:ai_test' %}">
-                        <label class="sr-only" for="question">Question</label>
-                        <div class="composer-shell">
-                            <textarea id="question" name="q" rows="1" placeholder="Ask about calving risk, labour progress, or calf care..." class="composer-input" required></textarea>
-                            <button id="submit-btn" type="submit" class="composer-primary">Send</button>
-                        </div>
-                        <div class="embedded-composer-footer">
-                            <p class="text-xs text-[#9a9893]">Short questions work best inside the dashboard.</p>
-                            <button id="clear-btn" type="button" class="composer-secondary">Clear chat</button>
-                        </div>
-                    </form>
+                        </form>
                     </div>
                 </section>
             {% else %}
-                <header class="topbar px-5 sm:px-8 py-6 border-b border-dusk/10 text-center">
-                    {% include "includes/cow_calving_logo.html" with logo_wrap_class="mx-auto inline-flex flex-col items-center gap-1.5" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-14 w-14 text-[#a45d19]" logo_text_wrap_class="text-center leading-none" logo_text_class="font-display text-4xl text-[#8f4e17]" logo_tagline_class="mt-1 text-base italic text-[#b68459]" %}
-                    <p class="hero-subtitle text-sm mt-2 mx-auto max-w-2xl">
-                        Consultation Chat
-                    </p>
-                    <span class="sr-only">AI Advice Demo</span>
+                <header class="topbar px-5 sm:px-8 py-7 border-b border-dusk/10">
+                    <div class="workspace-hero">
+                        <div class="assistant-logo-lockup">
+                            {% include "includes/cow_calving_logo.html" with logo_wrap_class="assistant-brand-mark" logo_icon_wrap_class="flex items-center justify-center" logo_icon_class="h-14 w-14 text-[#1a6a31]" logo_text_wrap_class="sr-only" logo_text_class="sr-only" logo_tagline_class="hidden" %}
+                            <h1 class="assistant-title">Cow Calving Assistant</h1>
+                        </div>
+                        <div class="hero-meta">
+                            <span class="presence-pill">
+                                <span class="presence-dot" aria-hidden="true"></span>
+                                Online
+                            </span>
+                            <p id="status" class="status-text status-normal text-sm">Ready for your question.</p>
+                        </div>
+                    </div>
                 </header>
 
-                <div class="grid lg:grid-cols-[320px_1fr] min-h-[78vh]">
-                    <aside class="sidebar p-5 sm:p-6 border-b lg:border-b-0 lg:border-r border-dusk/10">
-                        <div class="panel">
-                            <h2 class="panel-title">QUICK PROMPTS</h2>
-                            <div id="quick-questions" class="flex flex-col gap-2 mt-3">
-                                <button class="option-chip" type="button" data-question="What signs show this cow may calve within 24 hours?">24-hour calving signs</button>
+                <div class="workspace-layout min-h-[78vh]">
+                    <section class="workspace-pane">
+                        <div class="prompt-toggle-bar">
+                            <button
+                                type="button"
+                                class="prompt-toggle"
+                                data-quick-prompts-toggle
+                                aria-expanded="false"
+                                aria-controls="quick-prompts-panel"
+                            >
+                                Quick prompts
+                            </button>
+                            <p class="prompt-toggle-note">Starter ideas</p>
+                        </div>
+
+                        <div id="quick-prompts-panel" class="quick-prompts-panel" hidden>
+                            <div id="quick-questions" class="prompt-list prompt-grid">
+                                <button class="option-chip" type="button" data-question="My cow hasn't shown heat in 45 days. What should I do?">No heat after 45 days</button>
+                                <button class="option-chip" type="button" data-question="What signs show the best insemination window for this cow?">Best insemination window</button>
                                 <button class="option-chip" type="button" data-question="What should I prepare in the calving pen before labor starts?">Calving pen checklist</button>
-                                <button class="option-chip" type="button" data-question="Which danger signs mean I should call a vet immediately during labor?">Emergency labor signs</button>
-                                <button class="option-chip" type="button" data-question="What should I monitor in the first 12 hours after calving?">First 12-hour monitoring</button>
+                                <button class="option-chip" type="button" data-question="Which labour signs mean I should call a vet immediately?">Urgent labour signs</button>
                                 <button class="option-chip" type="button" data-question="How do I support a weak newborn calf in the first hour?">Weak calf support</button>
                             </div>
                         </div>
-                        <p id="status" class="status-text status-normal mt-5 text-sm text-center">Ready.</p>
-                    </aside>
 
-                    <section class="chat-stage">
                         <div id="chat-log" class="chat-log px-3 sm:px-5">
-                            <article class="chat-row assistant">
-                                <div class="avatar avatar-assistant">AI</div>
-                                <div class="bubble bubble-assistant markdown">
-                                    <h3>Welcome to, COW CALVING AI</h3>
-                                    <p>I can help with labor signs, risk alerts, and immediate calf support steps.</p>
-                                    <ul>
-                                        <li>Use the quick prompts for common scenarios.</li>
-                                        <li>Ask follow-up questions to refine the plan.</li>
-                                    </ul>
+                            <article class="chat-row assistant chat-row-intro">
+                                <div class="bubble bubble-assistant bubble-assistant-intro markdown">
+                                    <h3>Ask one clear farm question.</h3>
+                                    <p>Share the key symptom, timing, or concern and I will help with the next practical step.</p>
                                 </div>
                             </article>
                         </div>
@@ -154,10 +168,13 @@
                         <form id="ai-form" class="composer" data-ai-endpoint="{% url 'cow_calving_ai:ai_test' %}">
                             <label class="sr-only" for="question">Question</label>
                             <div class="composer-shell">
-                                <textarea id="question" name="q" rows="1" placeholder="Ask about calving risk, labor progress, or calf care..." class="composer-input" required></textarea>
-                                <button id="submit-btn" type="submit" class="composer-primary">Send</button>
+                                <textarea id="question" name="q" rows="1" placeholder="Ask a farm question, for example: my cow hasn't shown heat in 45 days..." class="composer-input" required></textarea>
+                                <button id="submit-btn" type="submit" class="composer-primary">Ask AI</button>
                             </div>
-                            <button id="clear-btn" type="button" class="composer-secondary">Clear chat</button>
+                            <div class="embedded-composer-footer">
+                                <p class="composer-note">Short, direct questions usually work best.</p>
+                                <button id="clear-btn" type="button" class="composer-secondary">Clear chat</button>
+                            </div>
                         </form>
                     </section>
                 </div>
@@ -169,4 +186,3 @@
     <script src="{% static 'cow_calving_ai/js/ai-demo.js' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}" defer></script>
 </body>
 </html>
-

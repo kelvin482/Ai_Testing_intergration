@@ -13,6 +13,8 @@ class CoreWebHomeTests(TestCase):
         self.assertContains(response, "/accounts/login/")
         self.assertContains(response, "Sign In")
         self.assertContains(response, "Create Account")
+        self.assertContains(response, "Guide Library")
+        self.assertContains(response, reverse("Core_Web:support"))
 
     def test_home_page_shows_profile_link_for_authenticated_user_without_role(self):
         user = User.objects.create_user(
@@ -73,8 +75,11 @@ class CoreWebHomeTests(TestCase):
         response = self.client.get(reverse("Core_Web:support"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Support And Resources")
-        self.assertContains(response, "When should support replace self-management?")
+        self.assertContains(response, "Support &amp; Resources", html=False)
+        self.assertContains(response, "We're here to help you succeed.")
+        self.assertContains(response, "Urgent Escalation")
+        self.assertContains(response, "Guide Library")
+        self.assertContains(response, "Troubleshooting")
 
     @override_settings(DEBUG=True)
     def test_home_page_disables_html_caching_in_debug(self):
