@@ -39,8 +39,8 @@ class VeterinaryDashboardViewTests(TestCase):
         self.assertContains(response, "Overview")
         self.assertContains(response, "Active Case")
         self.assertContains(response, "Farm Map")
+        self.assertContains(response, "Schedule")
         self.assertContains(response, "Messages")
-        self.assertContains(response, "My Farms")
         self.assertContains(response, "Medical Records")
         self.assertContains(response, "Notifications")
         self.assertContains(response, "Workspace")
@@ -51,6 +51,8 @@ class VeterinaryDashboardViewTests(TestCase):
         self.assertContains(response, "Logout")
         self.assertContains(response, "AI workspace")
         self.assertContains(response, 'data-dashboard-ai-resize-handle', html=False)
+        self.assertContains(response, "dashboard-tailwind.css")
+        self.assertNotContains(response, "cdn.tailwindcss.com")
         self.assertContains(response, '<form method="post" action="/accounts/logout/">', html=False)
         self.assertNotContains(response, 'href="/accounts/logout/"', html=False)
 
@@ -70,6 +72,20 @@ class VeterinaryDashboardViewTests(TestCase):
 
         self.assertRedirects(response, "/farmers/", fetch_redirect_response=False)
 
+    def test_superuser_can_access_veterinary_dashboard(self):
+        admin_user = User.objects.create_superuser(
+            username="admin-vet-dash",
+            email="admin-vet-dash@example.com",
+            password="StrongPass123!",
+        )
+        Profile.objects.create(user=admin_user, role=self.role, professional_id="VET-999")
+        self.client.force_login(admin_user)
+
+        response = self.client.get("/veterinary/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Veterinary Dashboard")
+
     def test_veterinary_workspace_pages_load_for_veterinary_role(self):
         Profile.objects.create(user=self.user, role=self.role)
         self.client.force_login(self.user)
@@ -80,7 +96,6 @@ class VeterinaryDashboardViewTests(TestCase):
             reverse("veterinary_dashboard:medical_records"),
             reverse("veterinary_dashboard:notifications"),
             reverse("veterinary_dashboard:schedule"),
-            reverse("veterinary_dashboard:farms"),
             reverse("veterinary_dashboard:patients"),
             reverse("veterinary_dashboard:diagnosis"),
             reverse("veterinary_dashboard:prescriptions"),
@@ -99,6 +114,14 @@ class VeterinaryDashboardViewTests(TestCase):
                     self.assertContains(response, "Notifications")
                 else:
                     self.assertContains(response, "Workspace")
+
+    def test_removed_farms_page_returns_not_found(self):
+        Profile.objects.create(user=self.user, role=self.role)
+        self.client.force_login(self.user)
+
+        response = self.client.get("/veterinary/farms/")
+
+        self.assertEqual(response.status_code, 404)
 
     def test_schedule_page_uses_planner_layout(self):
         Profile.objects.create(user=self.user, role=self.role)
@@ -119,16 +142,84 @@ class VeterinaryDashboardViewTests(TestCase):
         response = self.client.get(reverse("veterinary_dashboard:patients"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Active case queue")
-        self.assertContains(response, "Cases ready for action")
         self.assertContains(response, "Selected active case")
         self.assertContains(response, "Case health bar")
         self.assertContains(response, "Progress tracker")
-        self.assertContains(response, "Keep the essentials open")
+        self.assertContains(response, "More filters")
         self.assertContains(response, "Clinical snapshot")
+        self.assertContains(response, "Quick actions")
+        self.assertContains(response, "Mark as reviewed")
+        self.assertContains(response, "Send farmer update")
+        self.assertContains(response, "Schedule follow-up")
+        self.assertContains(response, "Complete case")
         self.assertNotContains(response, "AI recommendation")
         self.assertNotContains(response, "Draft note for this case")
         self.assertContains(response, 'id="patient-list"', html=False)
+        self.assertContains(response, 'id="patient-message-panel"', html=False)
+        self.assertContains(response, 'id="patient-follow-up-panel"', html=False)
+        self.assertContains(response, 'id="patient-action-feedback"', html=False)
+        self.assertContains(response, 'data-row-menu-toggle', html=False)
+        self.assertContains(response, 'data-row-menu-link', html=False)
+        self.assertContains(response, 'data-row-menu-action="schedule_follow_up"', html=False)
+
+    def test_medical_records_page_uses_farm_relationship_layout(self):
+        Profile.objects.create(user=self.user, role=self.role)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("veterinary_dashboard:medical_records"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Search by name or region...")
+        self.assertContains(response, "Herd overview")
+        self.assertContains(response, "View full herd")
+        self.assertContains(response, "Selected record")
+        self.assertContains(response, "Vet update")
+        self.assertContains(response, 'id="farm-case-list"', html=False)
+        self.assertContains(response, 'id="farm-record-list"', html=False)
+        self.assertContains(response, 'id="selected-record-title"', html=False)
+        self.assertContains(response, 'id="save-record-update"', html=False)
+        content = response.content.decode()
+        self.assertLess(content.index("Green Valley Farm"), content.index("Moi Farm"))
+        self.assertLess(content.index("Moi Farm"), content.index("Sunrise Dairy"))
+
+    def test_messages_thread_page_shows_live_reply_preview_panel(self):
+        Profile.objects.create(user=self.user, role=self.role)
+        farmer_role, _ = Role.objects.get_or_create(
+            slug="farmer",
+            defaults={
+                "name": "Farmer",
+                "dashboard_namespace": "farmers_dashboard",
+                "default_path": "/farmers/",
+            },
+        )
+        farmer = User.objects.create_user(
+            username="preview-farmer",
+            email="preview-farmer@example.com",
+            password="StrongPass123!",
+        )
+        Profile.objects.create(user=farmer, role=farmer_role)
+        thread = ConversationThread.objects.create(
+            farmer=farmer,
+            provider_key="veterinary-dr-james-mwangi",
+            provider_name_snapshot="Dr. James Mwangi",
+            provider_title_snapshot="Large animal veterinarian",
+            provider_service_type="veterinary",
+            subject="Need help with a treatment review",
+        )
+        thread.messages.create(
+            thread=thread,
+            sender=farmer,
+            sender_role_snapshot="farmer",
+            body="Can you confirm whether I should continue treatment?",
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("veterinary_dashboard:messages_thread", args=[thread.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Live vet preview")
+        self.assertContains(response, 'data-reply-form', html=False)
+        self.assertContains(response, 'data-reply-preview', html=False)
 
     def test_veterinary_can_reply_to_farmer_thread_with_image(self):
         Profile.objects.create(user=self.user, role=self.role)

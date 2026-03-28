@@ -260,6 +260,8 @@ class ProfileViewTests(TestCase):
         self.assertContains(response, "Logout")
         self.assertContains(response, "Demo Farm")
         self.assertContains(response, "Veterinary")
+        self.assertContains(response, "dashboard-tailwind.css")
+        self.assertNotContains(response, "cdn.tailwindcss.com")
 
     def test_profile_edit_updates_details(self):
         self.client.force_login(self.user)

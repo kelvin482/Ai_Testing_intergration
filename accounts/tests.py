@@ -238,6 +238,46 @@ class AccountsViewTests(TestCase):
             "Veterinary accounts must sign in with the professional ID assigned by admin.",
         )
 
+    def test_superuser_can_sign_in_through_farmer_login_path(self):
+        user = User.objects.create_superuser(
+            username="admin-farmer-login",
+            email="admin-farmer@example.com",
+            password="StrongPass123!",
+        )
+        Profile.objects.create(user=user, role=self.veterinary_role, professional_id="VET-900")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "login_type": "farmer",
+                "email": "admin-farmer@example.com",
+                "password": "StrongPass123!",
+            },
+            follow=False,
+        )
+
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+
+    def test_superuser_can_sign_in_through_veterinary_login_path(self):
+        user = User.objects.create_superuser(
+            username="admin-vet-login",
+            email="admin-vet@example.com",
+            password="StrongPass123!",
+        )
+        Profile.objects.create(user=user, role=self.farmer_role, professional_id="VET-901")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "login_type": "veterinary",
+                "professional_id": "VET-901",
+                "password": "StrongPass123!",
+            },
+            follow=False,
+        )
+
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+
 
 class CowCalvingRegisterFormTests(TestCase):
     def setUp(self):

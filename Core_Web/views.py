@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render
 
-from users.services import get_dashboard_url_for_user, get_or_create_profile
+from users.services import get_dashboard_url_for_user, get_profile
 
 
 def _build_site_context(request, page_key):
@@ -13,10 +13,11 @@ def _build_site_context(request, page_key):
     role_slug = ""
 
     if request.user.is_authenticated:
-        profile = get_or_create_profile(request.user)
+        profile = get_profile(request.user)
         dashboard_url = get_dashboard_url_for_user(
             request.user,
             fallback=profile_url,
+            profile=profile,
         )
         role_slug = profile.role.slug if profile.role else ""
         dashboard_label = (

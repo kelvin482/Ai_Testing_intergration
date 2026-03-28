@@ -225,6 +225,38 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(response, "jmwangi@vetkenya.co.ke")
         self.assertContains(response, "Nairobi and nearby peri-urban farms")
 
+    def test_service_finder_prioritizes_registered_veterinary_accounts(self):
+        self._login_farmer()
+        vet_role, _ = Role.objects.get_or_create(
+            slug="veterinary",
+            defaults={
+                "name": "Veterinary",
+                "dashboard_namespace": "veterinary_dashboard",
+                "default_path": "/veterinary/",
+            },
+        )
+        vet_user = User.objects.create_user(
+            username="live-vet",
+            email="live-vet@example.com",
+            password="StrongPass123!",
+            first_name="Agnes",
+            last_name="Njeri",
+        )
+        Profile.objects.create(
+            user=vet_user,
+            role=vet_role,
+            phone_number="+254700123456",
+            professional_id="VET-200",
+        )
+
+        response = self.client.get(reverse("farmers_dashboard:service_finder"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Agnes Njeri")
+        self.assertContains(response, "Active account")
+        content = response.content.decode()
+        self.assertLess(content.index("Agnes Njeri"), content.index("Dr. James Mwangi"))
+
     def test_service_finder_saves_message_and_shows_feedback(self):
         self._login_farmer()
 
@@ -262,6 +294,57 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(response, "Message sent to Mary Chebet")
         self.assertContains(response, "Mary Chebet")
         self.assertContains(response, "My cow showed heat signs this morning")
+
+    def test_service_finder_assigns_registered_vet_threads_to_live_account(self):
+        self._login_farmer()
+        vet_role, _ = Role.objects.get_or_create(
+            slug="veterinary",
+            defaults={
+                "name": "Veterinary",
+                "dashboard_namespace": "veterinary_dashboard",
+                "default_path": "/veterinary/",
+            },
+        )
+        vet_user = User.objects.create_user(
+            username="assigned-vet",
+            email="assigned-vet@example.com",
+            password="StrongPass123!",
+            first_name="Grace",
+            last_name="Wairimu",
+        )
+        Profile.objects.create(
+            user=vet_user,
+            role=vet_role,
+            phone_number="+254711000111",
+            professional_id="VET-310",
+        )
+
+        response = self.client.post(
+            reverse("farmers_dashboard:service_finder"),
+            data={
+                "send_message": "1",
+                "provider_key": f"registered-veterinary-{vet_user.pk}",
+                "county": "",
+                "service_type": "veterinary",
+                "message": "I need help reviewing a calving case today.",
+            },
+            follow=True,
+        )
+
+        thread = ConversationThread.objects.get()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(thread.assigned_veterinary_user, vet_user)
+        self.assertEqual(thread.provider_name_snapshot, "Grace Wairimu")
+        self.assertContains(response, "I need help reviewing a calving case today.")
+
+        self.client.force_login(vet_user)
+        vet_response = self.client.get(
+            reverse("veterinary_dashboard:messages_thread", args=[thread.pk])
+        )
+
+        self.assertEqual(vet_response.status_code, 200)
+        self.assertContains(vet_response, "Grace Wairimu")
+        self.assertContains(vet_response, "I need help reviewing a calving case today.")
 
     def test_farmer_message_thread_marks_vet_reply_notification_read_on_open(self):
         self._login_farmer()
@@ -546,3 +629,17 @@ class FarmersDashboardViewTests(TestCase):
         response = self.client.get(reverse("farmers_dashboard:dashboard"))
 
         self.assertRedirects(response, "/veterinary/", fetch_redirect_response=False)
+
+    def test_superuser_can_access_farmer_dashboard(self):
+        admin_user = User.objects.create_superuser(
+            username="admin-farmer-dash",
+            email="admin-farmer-dash@example.com",
+            password="StrongPass123!",
+        )
+        Profile.objects.create(user=admin_user, role=self.role)
+        self.client.force_login(admin_user)
+
+        response = self.client.get(reverse("farmers_dashboard:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Farmer Dashboard")

@@ -6,7 +6,7 @@ from django.shortcuts import redirect, render
 from .forms import ProfileUpdateForm
 from .services import get_dashboard_url_for_user
 from .services import get_post_login_url_for_user
-from .services import get_or_create_profile
+from .services import get_profile
 
 
 def _build_dashboard_page_context(request, profile, **extra):
@@ -14,6 +14,7 @@ def _build_dashboard_page_context(request, profile, **extra):
         "dashboard_home_url": get_dashboard_url_for_user(
             request.user,
             fallback=settings.AUTHENTICATED_DEFAULT_URL,
+            profile=profile,
         ),
         "profile": profile,
         **extra,
@@ -24,17 +25,19 @@ def _build_dashboard_page_context(request, profile, **extra):
 def dashboard_redirect_view(request):
     # Keep one shared redirect endpoint so login, social auth, and future
     # onboarding can route users without duplicating role logic.
+    profile = get_profile(request.user)
     return redirect(
         get_post_login_url_for_user(
             request.user,
             fallback=settings.AUTHENTICATED_DEFAULT_URL,
+            profile=profile,
         )
     )
 
 
 @login_required
 def profile_detail_view(request):
-    profile = get_or_create_profile(request.user)
+    profile = get_profile(request.user)
     return render(
         request,
         "users/profile_detail.html",
@@ -44,7 +47,7 @@ def profile_detail_view(request):
 
 @login_required
 def profile_edit_view(request):
-    profile = get_or_create_profile(request.user)
+    profile = get_profile(request.user)
     form = ProfileUpdateForm(
         request.POST or None,
         user=request.user,

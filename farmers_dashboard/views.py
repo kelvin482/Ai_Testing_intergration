@@ -19,12 +19,13 @@ from communications.services import (
     get_threads_for_user,
     get_unread_notification_count,
     get_unread_thread_count,
+    get_veterinary_users,
     mark_notification_read,
     mark_thread_messages_read,
     send_thread_message,
 )
 from users.permissions import role_required
-from users.services import get_or_create_profile
+from users.services import get_profile
 
 from .forms import (
     CowRegistrationForm,
@@ -1352,7 +1353,88 @@ def _extract_service_finder_filters(source):
 def _get_service_provider(provider_key):
     if not provider_key:
         return None
-    return SERVICE_PROVIDER_DIRECTORY_BY_KEY.get(provider_key)
+    return next(
+        (
+            provider
+            for provider in _build_service_provider_directory()
+            if provider["key"] == provider_key
+        ),
+        None,
+    )
+
+
+def _build_registered_veterinary_directory():
+    providers = []
+    for user in get_veterinary_users():
+        profile = getattr(user, "profile", None)
+        display_name = user.get_full_name().strip() or user.username
+        phone_number = (getattr(profile, "phone_number", "") or "").strip()
+        professional_id = (getattr(profile, "professional_id", "") or "").strip()
+        title_suffix = (
+            f" • {professional_id}" if professional_id else ""
+        )
+        providers.append(
+            {
+                "key": f"registered-veterinary-{user.pk}",
+                "name": display_name,
+                "provider_title": f"Registered veterinary account{title_suffix}",
+                "county": "",
+                "county_label": "Registered on CowCalving",
+                "service_type": SERVICE_TYPE_VETERINARY,
+                "service_type_label": "Veterinary",
+                "summary": "Live veterinary account ready to receive farmer messages inside the workspace during the demo.",
+                "phone": phone_number or "Available in the dashboard inbox",
+                "email": user.email or "Account email not shared",
+                "coverage": "Messages route directly to this veterinary workspace account.",
+                "availability": "Active account",
+                "is_verified": True,
+                "is_registered_account": True,
+                "is_demo_profile": False,
+                "status_badge": "Active account",
+                "assigned_veterinary_user": user,
+                "sort_priority": 0,
+            }
+        )
+    return providers
+
+
+def _build_service_provider_directory():
+    # Keep live veterinary accounts first so presentation demos use real inboxes
+    # before falling back to the static sample directory.
+    registered_providers = _build_registered_veterinary_directory()
+    registered_emails = {
+        provider["email"].strip().lower()
+        for provider in registered_providers
+        if provider.get("email")
+    }
+    registered_names = {
+        provider["name"].strip().lower() for provider in registered_providers
+    }
+
+    demo_providers = []
+    for provider in SERVICE_PROVIDER_DIRECTORY:
+        provider_copy = provider.copy()
+        email = provider_copy.get("email", "").strip().lower()
+        name = provider_copy.get("name", "").strip().lower()
+        if email in registered_emails or name in registered_names:
+            continue
+        provider_copy["is_registered_account"] = False
+        provider_copy["is_demo_profile"] = True
+        provider_copy["status_badge"] = (
+            "Demo profile"
+            if provider_copy["service_type"] == SERVICE_TYPE_VETERINARY
+            else "Demo listing"
+        )
+        provider_copy["sort_priority"] = (
+            1
+            if provider_copy["service_type"] == SERVICE_TYPE_VETERINARY
+            else 2
+        )
+        demo_providers.append(provider_copy)
+
+    providers = registered_providers + demo_providers
+    providers.sort(key=lambda provider: (provider["sort_priority"], provider["name"].lower()))
+    return providers
 
 
 def _build_service_finder_context(
@@ -1367,7 +1449,7 @@ def _build_service_finder_context(
         filter_source or request.GET
     )
 
-    providers = [provider.copy() for provider in SERVICE_PROVIDER_DIRECTORY]
+    providers = [provider.copy() for provider in _build_service_provider_directory()]
     if selected_county:
         providers = [
             provider for provider in providers if provider["county"] == selected_county
@@ -1433,7 +1515,7 @@ def _build_farmer_dashboard_context(
     header_primary_action=None,
     extra_context=None,
 ):
-    profile = get_or_create_profile(request.user)
+    profile = get_profile(request.user)
     display_name = request.user.get_full_name().strip() or request.user.username
     initials = "".join(part[0].upper() for part in display_name.split()[:2] if part) or "FM"
     cows, alerts, follow_up_items = _get_cows_for_user(request.user)
@@ -1785,7 +1867,7 @@ def notifications_view(request):
 @login_required
 @role_required("farmer")
 def location_view(request):
-    profile = get_or_create_profile(request.user)
+    profile = get_profile(request.user)
     if request.method == "POST":
         form = FarmLocationForm(request.POST)
         if form.is_valid():

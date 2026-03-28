@@ -67,11 +67,11 @@
 
 {% block veterinary_dashboard_content %}
     <section class="space-y-4">
-        <article class="overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]">
-            <div class="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <article class="overflow-hidden rounded-[1.45rem] border border-slate-200 bg-white shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+            <div class="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Farm map overview</p>
-                    <h2 class="mt-2 text-3xl tracking-tight text-slate-950 font-display">{{ region_label }}</h2>
+                    <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">{{ region_label }}</h2>
                     <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Use this page only when route context matters more than the regular case list.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -82,8 +82,8 @@
                 </div>
             </div>
 
-            <div class="p-6">
-                <div id="vet-farm-map" class="h-[42rem] overflow-hidden rounded-[1.5rem] border border-slate-200"></div>
+            <div class="p-5">
+                <div id="vet-farm-map" class="h-[42rem] overflow-hidden rounded-[1.2rem] border border-slate-200"></div>
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <p id="route-status" class="text-sm text-slate-600">Hover a farm card or marker to inspect it first, then select it to preview the route. Use your current location to draw a road route line that follows the route service when available.</p>
                     <button type="button" id="reset-map-focus" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50">
@@ -107,7 +107,7 @@
         </article>
 
         <section class="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <article class="rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+            <article class="rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Road route preview</p>
@@ -118,7 +118,7 @@
                     </span>
                 </div>
 
-                <div id="selected-farm-panel" class="mt-6 rounded-[1.3rem] border border-slate-200 bg-slate-50/70 p-5">
+                <div id="selected-farm-panel" class="mt-6 rounded-[1.05rem] border border-slate-200 bg-slate-50/70 p-4">
                     <p class="text-sm text-slate-600">Pick a farm from the list or a map marker to preview the road route, destination details, and travel estimate.</p>
                 </div>
 
@@ -135,22 +135,22 @@
                 </div>
             </article>
 
-            <article class="rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+            <article class="rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Saved farms</p>
                         <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Routing-ready farms</h2>
                         <p class="mt-2 text-sm leading-6 text-slate-600">Keep this list scannable, then open a route only when the destination is clear.</p>
                     </div>
-                    <a href="{% url 'veterinary_dashboard:farms' %}" class="text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
-                        Open my farms
+                    <a href="{% url 'veterinary_dashboard:medical_records' %}" class="text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                        Open medical records
                     </a>
                 </div>
 
                 <div class="mt-6 space-y-4 max-h-[34rem] overflow-y-auto pr-1">
                     {% for card in status_cards %}
                         <article
-                            class="vet-map-card rounded-[1.3rem] border border-slate-200 bg-slate-50/70 p-5"
+                            class="vet-map-card rounded-[1.05rem] border border-slate-200 bg-slate-50/70 p-4"
                             data-farm-card
                             data-marker-id="{{ card.id }}"
                             data-has-urgent="{{ card.has_urgent|yesno:'true,false' }}"
@@ -161,7 +161,7 @@
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-3">
                                         <span class="h-4 w-4 rounded-full {% if card.tone == 'rose' %}bg-rose-500{% elif card.tone == 'amber' %}bg-amber-500{% else %}bg-emerald-500{% endif %}"></span>
-                                        <p class="text-xl font-semibold text-slate-950">{{ card.name }}</p>
+                                        <p class="text-lg font-semibold text-slate-950">{{ card.name }}</p>
                                     </div>
                                     <p class="mt-2 text-sm text-slate-600">{{ card.owner }}</p>
                                     <div class="mt-4 grid gap-2 text-sm text-slate-600">
@@ -201,7 +201,7 @@
                             </div>
                         </article>
                     {% empty %}
-                        <div class="rounded-[1.3rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+                        <div class="rounded-[1.05rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center">
                             <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">No farm pins yet</p>
                             <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Waiting for farmer locations</h2>
                             <p class="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-600">
@@ -431,22 +431,22 @@
                 const routeSummaryMarkup = selectedRouteSummary
                     ? `
                         <div class="grid gap-3 sm:grid-cols-3">
-                            <div class="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                            <div class="rounded-[0.95rem] border border-slate-200 bg-white px-4 py-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Route type</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900">${selectedRouteSummary.routeType}</p>
                             </div>
-                            <div class="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                            <div class="rounded-[0.95rem] border border-slate-200 bg-white px-4 py-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Distance</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900">${selectedRouteSummary.distanceText}</p>
                             </div>
-                            <div class="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                            <div class="rounded-[0.95rem] border border-slate-200 bg-white px-4 py-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Travel estimate</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900">${selectedRouteSummary.durationText}</p>
                             </div>
                         </div>
                     `
                     : `
-                        <div class="rounded-[1rem] border border-dashed border-slate-300 bg-white px-4 py-4">
+                        <div class="rounded-[0.95rem] border border-dashed border-slate-300 bg-white px-4 py-3">
                             <p class="text-sm text-slate-600">Use your current location to load a road route preview and travel estimate for this farm.</p>
                         </div>
                     `;
@@ -455,15 +455,15 @@
                     <div class="space-y-4">
                         <div>
                             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Destination</p>
-                            <h3 class="mt-2 text-2xl font-semibold text-slate-950">${marker.name}</h3>
+                            <h3 class="mt-2 text-xl font-semibold text-slate-950">${marker.name}</h3>
                             <p class="mt-2 text-sm text-slate-600">${marker.owner}</p>
                         </div>
                         <div class="grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                            <div class="rounded-[0.95rem] border border-slate-200 bg-white px-4 py-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900">${marker.status}</p>
                             </div>
-                            <div class="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+                            <div class="rounded-[0.95rem] border border-slate-200 bg-white px-4 py-3">
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Phone</p>
                                 <p class="mt-2 text-sm font-semibold text-slate-900">${marker.phone || "No phone saved"}</p>
                             </div>

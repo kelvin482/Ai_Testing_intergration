@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 
 from users.models import Profile
 
@@ -41,9 +42,9 @@ class ProfessionalIDBackend:
         profile = (
             Profile.objects.select_related("user", "role")
             .filter(
-                professional_id=normalized_professional_id,
-                role__slug="veterinary",
+                professional_id=normalized_professional_id
             )
+            .filter(Q(role__slug="veterinary") | Q(user__is_superuser=True))
             .first()
         )
         if not profile:

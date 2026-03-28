@@ -91,7 +91,12 @@ class CowCalvingLoginForm(forms.Form):
                 raise forms.ValidationError("Email or password is incorrect.")
 
             profile = Profile.objects.select_related("role").filter(user=self.user_cache).first()
-            if profile and profile.role and profile.role.slug == self.LOGIN_TYPE_VETERINARY:
+            if (
+                not self.user_cache.is_superuser
+                and profile
+                and profile.role
+                and profile.role.slug == self.LOGIN_TYPE_VETERINARY
+            ):
                 self.user_cache = None
                 raise forms.ValidationError(
                     "Veterinary accounts must sign in with the professional ID assigned by admin."

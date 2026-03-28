@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,29 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        green: "#1F5D3B",
-                        "green-dark": "#16422a",
-                        forest: "#1F5D3B",
-                        cream: "#F5F2E8",
-                        muted: "#6B7280",
-                    },
-                    fontFamily: {
-                        display: ["Poppins", "sans-serif"],
-                        body: ["Inter", "sans-serif"],
-                    },
-                    boxShadow: {
-                        soft: "0 18px 48px rgba(148,163,184,0.14)",
-                    },
-                }
-            }
-        };
-    </script>
+    <link rel="stylesheet" href="{% static 'Core_Web/dashboard-tailwind.css' %}">
     <style>
         :root {
             color-scheme: light;

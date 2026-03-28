@@ -69,6 +69,11 @@
                                         Verified
                                     </span>
                                 {% endif %}
+                                {% if provider.status_badge %}
+                                    <span class="inline-flex items-center rounded-full {% if provider.is_registered_account %}bg-sky-50 text-sky-700{% else %}bg-slate-100 text-slate-600{% endif %} px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                                        {{ provider.status_badge }}
+                                    </span>
+                                {% endif %}
                             </div>
                             <p class="mt-2 text-sm font-medium text-slate-700">{{ provider.provider_title }}</p>
                             <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">

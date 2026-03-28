@@ -29,7 +29,15 @@ def is_veterinary_user(user):
 
 def get_veterinary_users():
     user_model = get_user_model()
-    return user_model.objects.filter(profile__role__slug=ROLE_VETERINARY).distinct()
+    return (
+        user_model.objects.filter(
+            is_active=True,
+            profile__role__slug=ROLE_VETERINARY,
+            profile__role__is_active=True,
+        )
+        .select_related("profile", "profile__role")
+        .distinct()
+    )
 
 
 def build_thread_action_url(user, thread):
@@ -205,6 +213,7 @@ def send_thread_message(*, thread, sender, body, image=None):
 
 @transaction.atomic
 def create_or_append_provider_thread(*, farmer, provider, body, image=None, cow=None):
+    assigned_veterinary_user = provider.get("assigned_veterinary_user")
     thread = (
         ConversationThread.objects.filter(
             farmer=farmer,
@@ -221,9 +230,15 @@ def create_or_append_provider_thread(*, farmer, provider, body, image=None, cow=
             provider_name_snapshot=provider["name"],
             provider_title_snapshot=provider.get("provider_title", ""),
             provider_service_type=provider.get("service_type", ""),
+            assigned_veterinary_user=assigned_veterinary_user,
             subject=_build_thread_subject(provider, cow=cow),
             cow=cow,
             last_message_at=timezone.now(),
         )
+    elif assigned_veterinary_user and thread.assigned_veterinary_user_id is None:
+        # Keep live veterinary accounts attached to the conversation so the
+        # farmer-selected vet sees the thread first in the workspace.
+        thread.assigned_veterinary_user = assigned_veterinary_user
+        thread.save()
     send_thread_message(thread=thread, sender=farmer, body=body, image=image)
     return thread
