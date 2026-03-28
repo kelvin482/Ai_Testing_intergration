@@ -5,9 +5,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CowCalving.farm - Calving And Transition Checklist</title>
+  <title>Farmer Knowledge Hub | CowCalving.farm</title>
   <meta name="description"
-    content="Use the CowCalving.farm checklist page for dry-off planning, calving preparation, supply checks, team readiness, and practical first-day reminders.">
+    content="Farmer Knowledge Hub — short courses, practical checklists, and quick guides for calving and calf care.">
   <link rel="stylesheet" href="{% static 'Core_Web/styles.css' %}{% if dev_static_version %}?v={{ dev_static_version }}{% endif %}">
   <style>
     .auth-context {
@@ -29,8 +29,8 @@
   {% include "Core_Web/includes/public_site_nav.html" %}
 
   <div class="auth-context">
-    <span>Farmer Checklist</span>
-    <span>Prepare before the first calf arrives.</span>
+    <span>Farmer Knowledge Hub</span>
+    <span>Learning library, practical checklists, and field-ready guides.</span>
     {% if request.user.is_authenticated %}
       <a href="{{ dashboard_url|default:profile_url }}">{{ dashboard_label|default:"Complete Your Profile" }}</a>
       <a href="{{ profile_url }}">Profile</a>
@@ -65,6 +65,46 @@
           <h3>Escalate Early</h3>
           <p>Use the guide and support pages quickly when labor stalls, timing is unclear, or calf recovery looks poor.</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="knowledge-hub-section">
+    <div class="main-wrap">
+      <div class="section-tag">Knowledge Hub</div>
+      <h2>Learn Practical Skills & Follow Short Courses</h2>
+      <p class="subtitle">Short learning modules and suggested reads to help you prepare for calving, improve calf care, and manage herd nutrition.</p>
+      <div class="hub-grid">
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/cow and calf.jpg' %}" alt="Cow and calf">
+          <h3>Understanding Heat Detection Patterns</h3>
+          <p class="meta">Beginner • 15 min</p>
+        </a>
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/1490fe2cbb1e219d53027e4d8c7cf644.jpg' %}" alt="Cow">
+          <h3>Optimizing Nutrition for Peak Lactation</h3>
+          <p class="meta">Intermediate • 25 min</p>
+        </a>
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/00ac73aa5aaaecf17fae41d83e028216.jpg' %}" alt="Calf">
+          <h3>Calf Health: The First 24 Hours</h3>
+          <p class="meta">Beginner • 20 min</p>
+        </a>
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/a7938517ea1668247cd5f0170c0b23e4.jpg' %}" alt="Barn">
+          <h3>Standard Operating Procedures for Milking</h3>
+          <p class="meta">Advanced • 30 min</p>
+        </a>
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/286aa99925f3186fc15680800fa372e6.jpg' %}" alt="Pasture">
+          <h3>Disease Prevention & Biosecurity</h3>
+          <p class="meta">Intermediate • 40 min</p>
+        </a>
+        <a class="hub-card" href="#">
+          <img src="{% static 'Core_Web/images/download (1).png' %}" alt="Phone app">
+          <h3>Mastering the DairyCare Mobile App</h3>
+          <p class="meta">Quick • 10 min</p>
+        </a>
       </div>
     </div>
   </div>
