@@ -225,6 +225,22 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(response, "+254712345678")
         self.assertContains(response, "jmwangi@vetkenya.co.ke")
         self.assertContains(response, "Nairobi and nearby peri-urban farms")
+        self.assertContains(response, 'data-profile-toggle', html=False)
+        self.assertContains(response, 'data-profile-panel', html=False)
+
+    def test_messages_page_can_open_compose_state_for_selected_provider(self):
+        self._login_farmer()
+
+        response = self.client.get(
+            reverse("farmers_dashboard:messages"),
+            {"provider": "veterinary-dr-james-mwangi"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "New conversation")
+        self.assertContains(response, "Dr. James Mwangi")
+        self.assertContains(response, "Send the first message here")
+        self.assertContains(response, 'name="start_conversation"', html=False)
 
     def test_service_finder_prioritizes_registered_veterinary_accounts(self):
         self._login_farmer()
@@ -295,6 +311,29 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(response, "Message sent to Mary Chebet")
         self.assertContains(response, "Mary Chebet")
         self.assertContains(response, "My cow showed heat signs this morning")
+
+    def test_messages_page_can_start_conversation_with_selected_provider(self):
+        self._login_farmer()
+
+        response = self.client.post(
+            reverse("farmers_dashboard:messages"),
+            data={
+                "start_conversation": "1",
+                "provider_key": "veterinary-dr-james-mwangi",
+                "county": "",
+                "service_type": "",
+                "message": "My cow has shown labour signs and I need urgent help.",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(ServiceProviderMessage.objects.count(), 1)
+        self.assertEqual(ConversationThread.objects.count(), 1)
+        thread = ConversationThread.objects.get()
+        self.assertEqual(thread.provider_name_snapshot, "Dr. James Mwangi")
+        self.assertEqual(thread.messages.count(), 1)
+        self.assertContains(response, "Message sent to Dr. James Mwangi.")
+        self.assertContains(response, "My cow has shown labour signs and I need urgent help.")
 
     def test_service_finder_assigns_registered_vet_threads_to_live_account(self):
         self._login_farmer()

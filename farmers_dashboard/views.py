@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from communications.forms import ConversationReplyForm
+from communications.models import ConversationThread
 from communications.services import (
     create_or_append_provider_thread,
     get_notifications_for_user,
@@ -1746,17 +1747,26 @@ def _build_thread_participants_for_farmer(thread):
     }
 
 
-def _load_farmer_message_state(request, thread_id=None):
+def _get_provider_thread_for_farmer(farmer, provider_key):
+    if not provider_key:
+        return None
+    return (
+        ConversationThread.objects.filter(
+            farmer=farmer,
+            provider_key=provider_key,
+        )
+        .exclude(status=ConversationThread.STATUS_CLOSED)
+        .order_by("-last_message_at", "-updated_at")
+        .first()
+    )
+
+
+def _load_farmer_message_state(request, thread_id=None, preserve_empty_selection=False):
     selected_thread = None
     if thread_id is not None:
         selected_thread = get_thread_for_user(request.user, thread_id)
         if selected_thread is None:
             raise Http404("Conversation not found.")
-
-    if selected_thread is None:
-        thread_list = get_threads_for_user(request.user)
-        if thread_list:
-            selected_thread = thread_list[0]
 
     if selected_thread is not None:
         mark_thread_messages_read(selected_thread, request.user)
@@ -1767,6 +1777,8 @@ def _load_farmer_message_state(request, thread_id=None):
             (thread for thread in thread_list if thread.pk == selected_thread.pk),
             selected_thread,
         )
+    elif not preserve_empty_selection and thread_list:
+        selected_thread = thread_list[0]
     return thread_list, selected_thread
 
 
@@ -1774,28 +1786,88 @@ def _load_farmer_message_state(request, thread_id=None):
 @role_required("farmer")
 def messages_view(request, thread_id=None):
     selected_thread = None
+    compose_provider = None
+    compose_form = None
+    reply_form = ConversationReplyForm()
+    compose_provider_key = request.GET.get("provider", "").strip()
     if thread_id is not None:
         selected_thread = get_thread_for_user(request.user, thread_id)
         if selected_thread is None:
             raise Http404("Conversation not found.")
+    elif compose_provider_key:
+        compose_provider = _get_service_provider(compose_provider_key)
+        if compose_provider is None:
+            raise Http404("Provider not found.")
+        selected_thread = _get_provider_thread_for_farmer(
+            request.user,
+            compose_provider_key,
+        )
 
     if request.method == "POST":
-        if selected_thread is None:
-            raise Http404("Conversation not found.")
-        reply_form = ConversationReplyForm(request.POST, request.FILES)
-        if reply_form.is_valid():
-            send_thread_message(
-                thread=selected_thread,
-                sender=request.user,
-                body=reply_form.cleaned_data["body"],
-                image=reply_form.cleaned_data.get("image"),
-            )
-            messages.success(request, "Your reply was sent.")
-            return redirect("farmers_dashboard:messages_thread", thread_id=selected_thread.pk)
-    else:
-        reply_form = ConversationReplyForm()
-
-    thread_list, selected_thread = _load_farmer_message_state(request, thread_id=thread_id)
+        if request.POST.get("start_conversation"):
+            compose_form = ServiceProviderMessageForm(request.POST, request.FILES)
+            if compose_form.is_valid():
+                compose_provider = _get_service_provider(
+                    compose_form.cleaned_data["provider_key"]
+                )
+                if compose_provider:
+                    ServiceProviderMessage.objects.create(
+                        farmer=request.user,
+                        provider_key=compose_provider["key"],
+                        provider_name=compose_provider["name"],
+                        provider_title=compose_provider["provider_title"],
+                        provider_service_type=compose_provider["service_type"],
+                        provider_county=compose_provider["county_label"],
+                        provider_phone=compose_provider["phone"],
+                        provider_email=compose_provider["email"],
+                        message=compose_form.cleaned_data["message"],
+                    )
+                    thread = create_or_append_provider_thread(
+                        farmer=request.user,
+                        provider=compose_provider,
+                        body=compose_form.cleaned_data["message"],
+                        image=compose_form.cleaned_data.get("image"),
+                    )
+                    messages.success(
+                        request,
+                        f"Message sent to {compose_provider['name']}.",
+                    )
+                    return redirect(
+                        "farmers_dashboard:messages_thread",
+                        thread_id=thread.pk,
+                    )
+                compose_form.add_error(
+                    None,
+                    "This provider is no longer available. Choose another provider.",
+                )
+        else:
+            if selected_thread is None:
+                raise Http404("Conversation not found.")
+            reply_form = ConversationReplyForm(request.POST, request.FILES)
+            if reply_form.is_valid():
+                send_thread_message(
+                    thread=selected_thread,
+                    sender=request.user,
+                    body=reply_form.cleaned_data["body"],
+                    image=reply_form.cleaned_data.get("image"),
+                )
+                messages.success(request, "Your reply was sent.")
+                return redirect("farmers_dashboard:messages_thread", thread_id=selected_thread.pk)
+    # Keep the right panel in "new conversation" mode when the farmer came
+    # from a provider card and no thread exists yet; otherwise the first old
+    # thread would immediately replace the compose state.
+    preserve_empty_selection = compose_provider is not None and selected_thread is None
+    thread_list, selected_thread = _load_farmer_message_state(
+        request,
+        thread_id=selected_thread.pk if selected_thread else thread_id,
+        preserve_empty_selection=preserve_empty_selection,
+    )
+    if compose_provider and selected_thread is not None:
+        compose_provider = None
+    if compose_provider and compose_form is None:
+        compose_form = ServiceProviderMessageForm(
+            initial={"provider_key": compose_provider["key"]}
+        )
 
     return render(
         request,
@@ -1818,6 +1890,8 @@ def messages_view(request, thread_id=None):
                 if selected_thread
                 else None,
                 "reply_form": reply_form,
+                "compose_provider": compose_provider,
+                "compose_form": compose_form,
             },
         ),
     )
