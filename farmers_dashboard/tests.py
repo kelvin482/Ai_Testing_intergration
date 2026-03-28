@@ -191,7 +191,8 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(reports_response, "Next meaningful date per cow")
         self.assertContains(reports_response, "Expected calving")
         self.assertContains(reports_response, cow.name)
-        self.assertContains(service_response, "Find veterinary and AI support by county")
+        # The page now shows the service finder headline inside the content card.
+        self.assertContains(service_response, "Find the right field support")
         self.assertContains(service_response, "Artificial insemination")
 
     def test_service_finder_filters_to_artificial_insemination_personnel(self):
