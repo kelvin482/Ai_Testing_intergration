@@ -5,6 +5,7 @@ from django.utils import timezone
 
 
 class ConversationThread(models.Model):
+    """One shared conversation between a farmer and the veterinary side."""
     STATUS_OPEN = "open"
     STATUS_WAITING_FOR_VET = "waiting_for_vet"
     STATUS_WAITING_FOR_FARMER = "waiting_for_farmer"
@@ -65,6 +66,8 @@ class ConversationThread(models.Model):
 
     @property
     def subject_text(self):
+        # Keep admin and template displays readable even when a manual subject
+        # has not been stored on the row yet.
         if self.subject:
             return self.subject
         if self.cow:
@@ -73,6 +76,7 @@ class ConversationThread(models.Model):
 
 
 class ConversationMessage(models.Model):
+    """A single message inside a thread, with read state tracked per row."""
     thread = models.ForeignKey(
         ConversationThread,
         on_delete=models.CASCADE,
@@ -100,6 +104,7 @@ class ConversationMessage(models.Model):
 
 
 class MessageImageAttachment(models.Model):
+    """Optional image evidence attached to one conversation message."""
     message = models.ForeignKey(
         ConversationMessage,
         on_delete=models.CASCADE,
@@ -124,6 +129,7 @@ class MessageImageAttachment(models.Model):
 
 
 class Notification(models.Model):
+    """Short recipient-specific alerts that point back to thread activity."""
     TYPE_NEW_FARMER_MESSAGE = "new_farmer_message"
     TYPE_PROVIDER_REPLIED = "provider_replied"
 
@@ -181,4 +187,3 @@ class Notification(models.Model):
     @property
     def is_read(self):
         return self.read_at is not None
-

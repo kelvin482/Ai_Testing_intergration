@@ -9,6 +9,8 @@ from .models import (
 
 
 class MessageImageAttachmentInline(admin.TabularInline):
+    # Show message attachments inline so an admin can inspect the full message
+    # record without jumping through separate image rows.
     model = MessageImageAttachment
     extra = 0
 
@@ -46,4 +48,3 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ("title", "recipient", "notification_type", "created_at", "read_at")
     list_filter = ("notification_type",)
     search_fields = ("title", "body", "recipient__username")
-

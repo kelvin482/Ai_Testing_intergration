@@ -17,6 +17,7 @@ ROLE_VETERINARY = "veterinary"
 
 
 def get_role_slug_for_user(user):
+    """Read the stored role slug without assuming every user has a profile."""
     profile = getattr(user, "profile", None)
     if profile and profile.role:
         return profile.role.slug
@@ -28,6 +29,7 @@ def is_veterinary_user(user):
 
 
 def get_veterinary_users():
+    """Return active veterinary accounts that can receive inbox notifications."""
     user_model = get_user_model()
     return (
         user_model.objects.filter(
@@ -41,12 +43,15 @@ def get_veterinary_users():
 
 
 def build_thread_action_url(user, thread):
+    """Send each recipient to the correct dashboard route for the same thread."""
     if is_veterinary_user(user):
         return reverse("veterinary_dashboard:messages_thread", args=[thread.pk])
     return reverse("farmers_dashboard:messages_thread", args=[thread.pk])
 
 
 def get_threads_queryset_for_user(user):
+    # Load the related people, case context, and messages in one query path so
+    # both dashboards can render thread lists without repeated database hits.
     queryset = (
         ConversationThread.objects.select_related(
             "farmer",
@@ -65,6 +70,8 @@ def get_threads_queryset_for_user(user):
         .order_by("-last_message_at", "-updated_at")
     )
     if is_veterinary_user(user):
+        # Veterinary users can open threads explicitly assigned to them and
+        # unassigned threads that still need someone from the team to respond.
         return queryset.filter(
             Q(assigned_veterinary_user=user) | Q(assigned_veterinary_user__isnull=True)
         )
@@ -79,6 +86,8 @@ def get_threads_for_user(user):
     threads = list(get_threads_queryset_for_user(user))
     for thread in threads:
         messages = list(thread.messages.all())
+        # Attach lightweight derived values to each thread so templates can stay
+        # simple and do not need to recompute unread state themselves.
         latest_message = messages[-1] if messages else None
         thread.latest_message = latest_message
         thread.unread_message_count = sum(
@@ -90,6 +99,7 @@ def get_threads_for_user(user):
 
 
 def get_unread_thread_count(user):
+    """Count distinct threads with unread incoming messages for one user."""
     queryset = ConversationMessage.objects.filter(read_at__isnull=True).exclude(sender=user)
     if is_veterinary_user(user):
         queryset = queryset.filter(
@@ -102,6 +112,7 @@ def get_unread_thread_count(user):
 
 
 def get_notifications_for_user(user):
+    """Return the notification feed already scoped to the current recipient."""
     return Notification.objects.select_related("thread", "cow", "actor").filter(
         recipient=user
     )
@@ -112,6 +123,8 @@ def get_unread_notification_count(user):
 
 
 def mark_notification_read(notification, user):
+    # Ignore stale or unauthorized mark-read attempts instead of raising so the
+    # dashboards can safely repeat the action.
     if notification.recipient_id != user.id or notification.read_at is not None:
         return
     notification.read_at = timezone.now()
@@ -119,6 +132,8 @@ def mark_notification_read(notification, user):
 
 
 def mark_thread_messages_read(thread, user):
+    # Opening a thread should clear both the unread message flags and the
+    # linked thread notifications for the same recipient in one step.
     now = timezone.now()
     thread.messages.filter(read_at__isnull=True).exclude(sender=user).update(read_at=now)
     Notification.objects.filter(
@@ -143,6 +158,8 @@ def _build_notification_body(body):
 
 
 def _get_veterinary_notification_recipients(thread):
+    # Once a veterinary user has claimed the thread, avoid notifying the whole
+    # team for every later farmer reply.
     if thread.assigned_veterinary_user_id:
         return [thread.assigned_veterinary_user]
     return list(get_veterinary_users())
@@ -157,6 +174,7 @@ def create_notification(
     body,
     thread=None,
 ):
+    """Create a short action-oriented alert linked back to its thread context."""
     Notification.objects.create(
         recipient=recipient,
         actor=actor,
@@ -172,6 +190,7 @@ def create_notification(
 
 @transaction.atomic
 def send_thread_message(*, thread, sender, body, image=None):
+    """Persist one message, optional attachment, and the follow-up notifications."""
     sender_role = get_role_slug_for_user(sender)
     message = ConversationMessage.objects.create(
         thread=thread,
@@ -184,6 +203,8 @@ def send_thread_message(*, thread, sender, body, image=None):
 
     thread.last_message_at = message.created_at
     if sender_role == ROLE_VETERINARY:
+        # The first veterinary reply claims an unassigned thread so future
+        # farmer responses route back to the same clinician.
         if thread.assigned_veterinary_user_id is None:
             thread.assigned_veterinary_user = sender
         thread.status = ConversationThread.STATUS_WAITING_FOR_FARMER
@@ -197,6 +218,8 @@ def send_thread_message(*, thread, sender, body, image=None):
             thread=thread,
         )
     else:
+        # Farmer replies move the thread back into the veterinary queue and
+        # notify either the assigned clinician or the active veterinary pool.
         thread.status = ConversationThread.STATUS_WAITING_FOR_VET
         thread.save()
         for recipient in _get_veterinary_notification_recipients(thread):
@@ -213,6 +236,7 @@ def send_thread_message(*, thread, sender, body, image=None):
 
 @transaction.atomic
 def create_or_append_provider_thread(*, farmer, provider, body, image=None, cow=None):
+    """Reuse the active provider thread when possible instead of fragmenting history."""
     # Farmer-selected live vet accounts can be embedded in the provider payload
     # so the resulting thread lands in the right veterinary inbox immediately.
     assigned_veterinary_user = provider.get("assigned_veterinary_user")
