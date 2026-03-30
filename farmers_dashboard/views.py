@@ -1252,31 +1252,27 @@ def _build_summary_cards(cows, alerts):
     pregnant_percent = int((pregnant_count / total_cows) * 100) if total_cows else 0
     return [
         {
-            "label": "Total cows",
+            "label": "Total herd",
             "value": str(total_cows),
-            "detail": "Herd records",
-            "badge": "Herd",
+            "badge": "+ this month" if total_cows else "Start herd",
             "tone": "sky",
         },
         {
             "label": "Pregnant",
             "value": str(pregnant_count),
-            "detail": "Confirmed now",
             "badge": f"{pregnant_percent}% herd" if total_cows else "No records",
             "tone": "emerald",
         },
         {
             "label": "Due this month",
             "value": str(due_this_month_count),
-            "detail": "Expected soon",
-            "badge": "Due soon",
+            "badge": "Calving watch",
             "tone": "amber",
         },
         {
-            "label": "Needs attention",
+            "label": "Active alerts",
             "value": str(needs_attention_count or len(alerts)),
-            "detail": "Open cases",
-            "badge": f"{len(alerts)} open alerts" if alerts else "All quiet",
+            "badge": f"{len(alerts)} open" if alerts else "All quiet",
             "tone": "rose",
         },
     ]

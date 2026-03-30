@@ -13,27 +13,23 @@
 
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {% for card in summary_cards %}
-                <article class="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <span class="flex h-8 w-8 items-center justify-center rounded-xl {% if card.tone == 'rose' %}bg-rose-50 text-rose-500{% elif card.tone == 'amber' %}bg-amber-50 text-amber-500{% elif card.tone == 'emerald' %}bg-emerald-50 text-emerald-500{% else %}bg-sky-50 text-sky-500{% endif %}">
-                                <span class="h-2 w-2 rounded-full bg-current"></span>
-                            </span>
-                            <div>
-                                <p class="text-[14px] font-semibold tracking-tight text-slate-900">{{ card.label }}</p>
-                                <p class="mt-0.5 text-[11px] text-slate-500">{{ card.detail }}</p>
-                            </div>
-                        </div>
+                <article class="rounded-[1.2rem] border border-slate-200 bg-white px-5 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.05)]">
+                    <div class="flex min-h-[4.5rem] flex-col justify-between">
+                        <p class="text-[13px] font-medium text-slate-500">{{ card.label }}</p>
                         {% if card.badge %}
-                            <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold leading-none {% if card.tone == 'rose' %}bg-rose-100 text-rose-700{% elif card.tone == 'amber' %}bg-amber-100 text-amber-700{% elif card.tone == 'emerald' %}bg-emerald-100 text-emerald-700{% else %}bg-sky-100 text-sky-700{% endif %}">
-                                {{ card.badge }}
-                            </span>
+                            <div class="mt-4 flex items-center justify-between gap-3">
+                                <p class="text-[2rem] font-semibold leading-none tracking-tight tabular-nums {% if card.tone == 'rose' %}text-rose-500{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-500{% else %}text-slate-900{% endif %}">
+                                    {{ card.value }}
+                                </p>
+                                <span class="rounded-full px-2.5 py-1 text-[10px] font-semibold leading-none {% if card.tone == 'rose' %}bg-rose-100 text-rose-700{% elif card.tone == 'amber' %}bg-amber-100 text-amber-700{% elif card.tone == 'emerald' %}bg-emerald-100 text-emerald-700{% else %}bg-sky-100 text-sky-700{% endif %}">
+                                    {{ card.badge }}
+                                </span>
+                            </div>
+                        {% else %}
+                            <p class="mt-4 text-[2rem] font-semibold leading-none tracking-tight tabular-nums {% if card.tone == 'rose' %}text-rose-500{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-500{% else %}text-slate-900{% endif %}">
+                                {{ card.value }}
+                            </p>
                         {% endif %}
-                    </div>
-                    <div class="mt-4 border-t border-slate-100 pt-3">
-                        <p class="text-[2rem] font-semibold leading-none tracking-tight tabular-nums {% if card.tone == 'rose' %}text-rose-500{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-600{% else %}text-slate-900{% endif %}">
-                            {{ card.value }}
-                        </p>
                     </div>
                 </article>
             {% endfor %}

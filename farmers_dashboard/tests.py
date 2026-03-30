@@ -74,7 +74,7 @@ class FarmersDashboardViewTests(TestCase):
         self.assertContains(response, "Service support")
         self.assertContains(response, "No cows registered yet")
         self.assertContains(response, "Register First Cow")
-        self.assertContains(response, "Total cows")
+        self.assertContains(response, "Total herd")
         self.assertContains(response, "Add Cow")
 
     def test_register_cow_creates_record_and_redirects_to_tracking(self):
