@@ -1245,32 +1245,38 @@ def _build_profile_readiness(user, profile):
 
 
 def _build_summary_cards(cows, alerts):
+    total_cows = len(cows)
     pregnant_count = sum(1 for cow in cows if cow.is_pregnant)
     due_this_month_count = sum(1 for cow in cows if cow.is_due_this_month())
     needs_attention_count = sum(1 for cow in cows if cow.needs_attention)
+    pregnant_percent = int((pregnant_count / total_cows) * 100) if total_cows else 0
     return [
         {
             "label": "Total cows",
-            "value": str(len(cows)),
+            "value": str(total_cows),
             "detail": "Registered in your herd",
+            "badge": "Herd size",
             "tone": "sky",
         },
         {
             "label": "Pregnant",
             "value": str(pregnant_count),
             "detail": "Currently marked pregnant",
+            "badge": f"{pregnant_percent}% of herd" if total_cows else "No active records",
             "tone": "emerald",
         },
         {
             "label": "Due this month",
             "value": str(due_this_month_count),
             "detail": "Expected calving this month",
+            "badge": "Calving watch",
             "tone": "amber",
         },
         {
             "label": "Open / Needs attention",
             "value": str(needs_attention_count or len(alerts)),
             "detail": "Issues or near-calving cows",
+            "badge": f"{len(alerts)} open alerts" if alerts else "All quiet",
             "tone": "rose",
         },
     ]
@@ -1333,6 +1339,67 @@ def _build_quick_links():
             "label": "Warning signs",
             "description": "Open the guide troubleshooting section for urgent warning signs.",
             "url": f"{reverse('Core_Web:guide')}#trouble",
+        },
+    ]
+
+
+def _build_farmer_overview_quick_actions():
+    return [
+        {
+            "label": "Add Cow",
+            "description": "Register a new herd entry.",
+            "url": reverse("farmers_dashboard:cow_register"),
+            "icon": "plus",
+        },
+        {
+            "label": "Open Herd",
+            "description": "Review all registered cows.",
+            "url": reverse("farmers_dashboard:herd"),
+            "icon": "herd",
+        },
+        {
+            "label": "Find Provider",
+            "description": "Open veterinary and AI support.",
+            "url": reverse("farmers_dashboard:service_finder"),
+            "icon": "provider",
+        },
+        {
+            "label": "Open Alerts",
+            "description": "Review cows needing attention.",
+            "url": reverse("farmers_dashboard:alerts"),
+            "icon": "alerts",
+        },
+    ]
+
+
+def _build_farmer_overview_support_items(profile, unread_message_count):
+    message_detail = "Continue provider conversations."
+    if unread_message_count:
+        plural = "s" if unread_message_count != 1 else ""
+        message_detail = f"{unread_message_count} unread message update{plural}."
+
+    return [
+        {
+            "label": "Service finder",
+            "description": "Browse veterinary and AI support for the next farm task.",
+            "meta": "Open directory",
+            "url": reverse("farmers_dashboard:service_finder"),
+        },
+        {
+            "label": "Messages",
+            "description": message_detail,
+            "meta": "Open inbox",
+            "url": reverse("farmers_dashboard:messages"),
+        },
+        {
+            "label": "Farm location",
+            "description": (
+                "Farm pin saved and ready for routing."
+                if profile.has_farm_location
+                else "Pin the farm so providers can route there faster."
+            ),
+            "meta": "Saved" if profile.has_farm_location else "Setup",
+            "url": reverse("farmers_dashboard:location"),
         },
     ]
 
@@ -1587,18 +1654,25 @@ def _build_location_initial_state(profile):
 @login_required
 @role_required("farmer")
 def dashboard_view(request):
-    return render(
+    context = _build_farmer_dashboard_context(
         request,
-        "farmers_dashboard/dashboard.html",
-        _build_farmer_dashboard_context(
-            request,
-            page_title="Farmer Dashboard | CowCalving",
-            page_eyebrow="Farmer workspace",
-            page_heading="Herd overview",
-            page_intro="Register cows, upload a photo, and start tracking calving from one place.",
-            page_header_context="Interactive herd dashboard",
-        ),
+        page_title="Farmer Dashboard | CowCalving",
+        page_eyebrow="Farmer workspace",
+        page_heading="Herd overview",
+        page_intro="Register cows, upload a photo, and start tracking calving from one place.",
+        page_header_context="Interactive herd dashboard",
     )
+    # Keep the overview intentionally light: a short action row, a short herd
+    # list, and a short support section instead of repeating every deep page.
+    context["overview_quick_actions"] = _build_farmer_overview_quick_actions()
+    context["overview_support_items"] = _build_farmer_overview_support_items(
+        context["profile"],
+        context["unread_message_count"],
+    )
+    context["follow_up_rows"] = _build_follow_up_schedule_rows(
+        context["follow_up_items"]
+    )[:3]
+    return render(request, "farmers_dashboard/dashboard.html", context)
 
 
 @login_required

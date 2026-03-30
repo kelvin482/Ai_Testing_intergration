@@ -1,119 +1,262 @@
 {% extends "farmers_dashboard/base_dashboard.html" %}
 
 {% block farmer_dashboard_content %}
-    <section class="rounded-[1.8rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] sm:px-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section>
+        <div class="mb-3 flex items-end justify-between gap-4">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Farm summary</p>
-                <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">What needs attention next</h2>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Today at a glance</p>
+                <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Farm overview</h2>
             </div>
-            <a href="{% url 'farmers_dashboard:cow_register' %}" class="inline-flex items-center justify-center rounded-[1rem] bg-[#14532d] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#114524]">
-                Add Cow
+            <a href="{% url 'farmers_dashboard:herd' %}" class="hidden rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex sm:items-center sm:justify-center">
+                View Full Herd
             </a>
         </div>
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {% for card in summary_cards %}
-                <div class="rounded-[1.2rem] border border-slate-200 bg-slate-50/80 px-4 py-4">
-                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ card.label }}</p>
-                    <div class="mt-2 flex items-end justify-between gap-3">
-                        <p class="text-3xl tracking-tight {% if card.tone == 'rose' %}text-rose-500{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-600{% else %}text-[#123d6a]{% endif %}">
-                            {{ card.value }}
-                        </p>
+                <article class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_4px_14px_rgba(15,23,42,0.04)]">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-[13px] font-medium text-slate-500">{{ card.label }}</p>
+                        {% if card.badge %}
+                            <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none {% if card.tone == 'rose' %}bg-rose-100 text-rose-700{% elif card.tone == 'amber' %}bg-amber-100 text-amber-700{% elif card.tone == 'emerald' %}bg-emerald-100 text-emerald-700{% else %}bg-sky-100 text-sky-700{% endif %}">
+                                {{ card.badge }}
+                            </span>
+                        {% endif %}
                     </div>
-                    <p class="mt-1 text-sm leading-6 text-slate-600">{{ card.detail }}</p>
-                </div>
+                    <p class="mt-3 text-[2rem] font-semibold leading-none tracking-tight {% if card.tone == 'rose' %}text-rose-600{% elif card.tone == 'amber' %}text-amber-500{% elif card.tone == 'emerald' %}text-emerald-600{% else %}text-slate-900{% endif %}">
+                        {{ card.value }}
+                    </p>
+                    <p class="mt-2 text-[13px] leading-5 text-slate-500">{{ card.detail }}</p>
+                </article>
             {% endfor %}
         </div>
     </section>
 
-    <section class="rounded-[2rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_16px_40px_rgba(15,23,42,0.06)] sm:px-7 sm:py-7">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">My cows</p>
-                <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Herd overview</h2>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">One list, one next step per cow. Open full tracking only when you need more detail.</p>
-            </div>
-            <a href="{% url 'farmers_dashboard:herd' %}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50">
-                Open herd
-            </a>
+    <section class="pt-1">
+        <div class="mb-3">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Quick workflow</p>
+            <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Quick actions</h2>
         </div>
 
-        {% if cow_records %}
-            <div class="mt-6 overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
-                {% for cow in cow_records %}
-                    <article class="grid gap-4 px-4 py-5 lg:grid-cols-[5rem_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-center {% if not forloop.last %}border-b border-slate-200{% endif %}">
-                        <div>
-                            {% if cow.photo_url %}
-                                <img src="{{ cow.photo_url }}" alt="{{ cow.name }}" class="h-16 w-16 rounded-2xl object-cover">
-                            {% else %}
-                                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-3xl">&#128004;</div>
-                            {% endif %}
-                        </div>
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{{ cow.cow_number }}</p>
-                                <span class="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% elif cow.status_tone == 'violet' %}bg-violet-100 text-violet-700{% elif cow.status_tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
-                                    {{ cow.status_label }}
-                                </span>
-                            </div>
-                            <h3 class="mt-2 text-xl tracking-tight text-slate-950 font-display">{{ cow.name }}</h3>
-                            <p class="mt-1 text-sm leading-6 text-slate-600">{{ cow.summary_text }}</p>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Next step</p>
-                            <p class="mt-2 text-sm leading-6 text-slate-700">{{ cow.next_action_text }}</p>
-                        </div>
-                        <div class="flex flex-col gap-3 lg:min-w-[11rem]">
-                            <a href="{% url 'farmers_dashboard:cow_tracking' cow.pk %}" class="inline-flex items-center justify-center rounded-[1rem] bg-[#14532d] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#114524]">
-                                Track calving
-                            </a>
-                            <a href="{% url 'farmers_dashboard:alerts' %}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50">
-                                View alerts
-                            </a>
-                        </div>
-                    </article>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="mt-6 rounded-[2rem] border border-dashed border-slate-300 bg-slate-50/60 px-6 py-16 text-center">
-                <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-5xl shadow-sm">&#128004;</div>
-                <h3 class="mt-6 text-2xl tracking-tight text-slate-950 font-display sm:text-3xl">No cows registered yet</h3>
-                <p class="mx-auto mt-3 max-w-2xl text-base leading-8 text-slate-600">
-                    Start by adding your first cow to track her image, number, pregnancy details, and calving progress.
-                </p>
-                <a href="{% url 'farmers_dashboard:cow_register' %}" class="mt-8 inline-flex items-center justify-center rounded-[1rem] bg-[#14532d] px-6 py-4 text-base font-semibold text-white transition hover:bg-[#114524]">
-                    Register First Cow
+        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {% for action in overview_quick_actions %}
+                <a href="{{ action.url }}" class="group rounded-2xl border border-slate-200 bg-white px-5 py-5 text-center shadow-[0_4px_14px_rgba(15,23,42,0.04)] transition hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.07)]">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-50 text-[#2f80ed] transition group-hover:bg-sky-100">
+                        {% if action.icon == "plus" %}
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                            </svg>
+                        {% elif action.icon == "herd" %}
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M4.5 18.5c0-2.7 2.2-4.9 4.9-4.9h5.2c2.7 0 4.9 2.2 4.9 4.9V20h-15v-1.5Z" stroke="currentColor" stroke-width="1.7"></path>
+                                <circle cx="12" cy="8.4" r="2.8" stroke="currentColor" stroke-width="1.7"></circle>
+                            </svg>
+                        {% elif action.icon == "provider" %}
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="m7 17 10-10M10 7h7v7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        {% else %}
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M12 5 19 18H5L12 5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"></path>
+                                <path d="M12 10v3.3M12 15.8h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+                            </svg>
+                        {% endif %}
+                    </span>
+                    <h3 class="mt-4 text-[1.05rem] font-semibold tracking-tight text-slate-900">{{ action.label }}</h3>
+                    <p class="mt-1.5 text-[13px] leading-5 text-slate-500">{{ action.description }}</p>
                 </a>
-            </div>
-        {% endif %}
+            {% endfor %}
+        </div>
     </section>
 
-    {% if cow_alerts %}
-        <section class="rounded-[1.8rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)] sm:px-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <section class="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(19rem,0.95fr)]">
+        <div class="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="mb-4 flex items-end justify-between gap-4">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Cow alerts</p>
-                    <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Needs attention now</h2>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Herd snapshot</p>
+                    <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Recent activity and priority cows</h2>
                 </div>
-                <a href="{% url 'farmers_dashboard:alerts' %}" class="text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
-                    Open alerts
+                <a href="{% url 'farmers_dashboard:herd' %}" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                    View Full Herd
                 </a>
             </div>
 
-            <div class="mt-5 overflow-hidden rounded-[1.4rem] border border-slate-200 bg-white">
-                {% for cow in cow_alerts|slice:":4" %}
-                    <article class="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center {% if not forloop.last %}border-b border-slate-200{% endif %}">
+            {% if cow_records %}
+                <div class="grid gap-3 md:grid-cols-2">
+                    {% for cow in cow_records|slice:":6" %}
+                        <article class="rounded-[1.2rem] border border-slate-200 bg-white px-4 py-3.5 shadow-[0_3px_12px_rgba(15,23,42,0.035)]">
+                            <div class="flex items-start gap-3">
+                                <div class="flex-shrink-0">
+                                    {% if cow.photo_url %}
+                                        <img src="{{ cow.photo_url }}" alt="{{ cow.name }}" class="h-12 w-12 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400">&#128004;</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-start justify-between gap-2">
+                                        <div class="min-w-0">
+                                            <p class="text-[1.05rem] font-semibold leading-none text-slate-950">{{ cow.cow_number }}</p>
+                                            <p class="mt-1 truncate text-[13px] text-slate-500">{{ cow.name }}</p>
+                                        </div>
+                                        <span class="rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% elif cow.status_tone == 'violet' %}bg-violet-100 text-violet-700{% elif cow.status_tone == 'sky' %}bg-sky-100 text-sky-700{% else %}bg-emerald-100 text-emerald-700{% endif %}">
+                                            {{ cow.status_label }}
+                                        </span>
+                                    </div>
+
+                                    <p class="mt-3 text-[12px] leading-5 text-slate-500">{{ cow.summary_text }}</p>
+                                    <div class="mt-3 flex items-center justify-between gap-3">
+                                        <p class="truncate text-[11px] font-medium uppercase tracking-[0.16em] text-slate-400">{{ cow.alert_category }}</p>
+                                        <a href="{% url 'farmers_dashboard:cow_tracking' cow.pk %}" class="text-[13px] font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                                            Track cow
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50/70 px-6 py-14 text-center">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white text-4xl shadow-sm">&#128004;</div>
+                    <h3 class="mt-5 text-[1.45rem] font-semibold tracking-tight text-slate-950">No cows registered yet</h3>
+                    <p class="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-600">
+                        Start by adding your first cow to keep her record, follow-up dates, and calving progress visible.
+                    </p>
+                    <a href="{% url 'farmers_dashboard:cow_register' %}" class="mt-6 inline-flex items-center justify-center rounded-xl bg-[#14532d] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#114524]">
+                        Register First Cow
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <aside class="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="mb-4 flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Alerts feed</p>
+                    <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Actions needing attention</h2>
+                    <p class="mt-1 text-[13px] text-slate-500">Review the cows that change today&apos;s next step.</p>
+                </div>
+                <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">Today</span>
+            </div>
+
+            {% if cow_alerts %}
+                <div class="space-y-3">
+                    {% for cow in cow_alerts|slice:":5" %}
+                        <article class="rounded-[1.1rem] border px-3.5 py-3 {% if cow.status_tone == 'rose' %}border-rose-300 bg-white shadow-[inset_0_0_0_1px_rgba(239,68,68,0.12)]{% elif cow.status_tone == 'amber' %}border-amber-200 bg-white{% else %}border-slate-200 bg-slate-50/70{% endif %}">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{{ cow.cow_number }} - {{ cow.name }}</p>
+                                    <h3 class="mt-1.5 text-[1rem] font-semibold leading-5 tracking-tight text-slate-900">{{ cow.alert_category }}</h3>
+                                </div>
+                                <span class="rounded-full px-2 py-1 text-[10px] font-semibold leading-none {% if cow.status_tone == 'rose' %}bg-rose-100 text-rose-700{% elif cow.status_tone == 'amber' %}bg-amber-100 text-amber-700{% else %}bg-slate-200 text-slate-700{% endif %}">
+                                    {% if cow.needs_attention %}Review{% else %}Watch{% endif %}
+                                </span>
+                            </div>
+                            <p class="mt-2 text-[13px] leading-5 text-slate-700">{{ cow.summary_text }}</p>
+                            <div class="mt-3 flex items-center justify-between gap-3">
+                                <span class="text-[11px] text-slate-400">{{ cow.status_label }}</span>
+                                <a href="{% url 'farmers_dashboard:cow_tracking' cow.pk %}" class="text-[13px] font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                                    Track cow
+                                </a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50/70 px-5 py-10 text-center">
+                    <h3 class="text-[1.1rem] font-semibold tracking-tight text-slate-950">No active alerts</h3>
+                    <p class="mt-2 text-[13px] leading-6 text-slate-600">When a cow needs closer watch or action, the alert will appear here.</p>
+                </div>
+            {% endif %}
+
+            <a href="{% url 'farmers_dashboard:alerts' %}" class="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+                Open Alerts
+            </a>
+        </aside>
+    </section>
+
+    <section class="grid gap-4 xl:grid-cols-2">
+        <div class="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="mb-4 flex items-end justify-between gap-4">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Follow-up queue</p>
+                    <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Follow-up schedule</h2>
+                    <p class="mt-1 text-[13px] leading-5 text-slate-500">Next meaningful dates for cows already in an active timeline.</p>
+                </div>
+                <a href="{% url 'farmers_dashboard:reports' %}" class="text-[13px] font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
+                    Open schedule
+                </a>
+            </div>
+
+            {% if follow_up_rows %}
+                <div class="space-y-3">
+                    {% for row in follow_up_rows %}
+                        <article class="rounded-[1.15rem] border border-slate-200 bg-slate-50/70 px-4 py-3.5">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-semibold text-slate-950">{{ row.cow.name }} {{ row.cow.cow_number }}</p>
+                                    <p class="mt-1 text-[13px] leading-5 text-slate-500">{{ row.detail }}</p>
+                                </div>
+                                <div class="rounded-xl bg-white px-3.5 py-2.5 shadow-sm sm:min-w-[9rem]">
+                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ row.next_label }}</p>
+                                    <p class="mt-1.5 text-[13px] font-semibold text-slate-900">{{ row.next_date|date:"d M Y" }}</p>
+                                    <p class="mt-1 text-[12px] text-slate-500">{{ row.next_timing }}</p>
+                                </div>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="rounded-[1.4rem] border border-dashed border-slate-300 bg-slate-50/70 px-5 py-10 text-center">
+                    <h3 class="text-[1.1rem] font-semibold tracking-tight text-slate-950">No follow-up dates yet</h3>
+                    <p class="mt-2 text-[13px] leading-6 text-slate-600">Add pregnancy, insemination, or calving dates to start the schedule.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="mb-4 flex items-start justify-between gap-4">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Support tools</p>
+                    <h2 class="mt-1 text-[1.35rem] font-semibold tracking-tight text-slate-950">Service support</h2>
+                    <p class="mt-1 text-[13px] leading-5 text-slate-500">Open the right support path when you need help beyond the farm.</p>
+                </div>
+                <a href="{% url 'farmers_dashboard:service_finder' %}" class="inline-flex items-center justify-center rounded-xl bg-[#2f80ed] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#226dcb]">
+                    Browse Providers
+                </a>
+            </div>
+
+            <div class="rounded-[1.15rem] border border-slate-200 bg-slate-50/70 px-4 py-3.5">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Routing readiness</p>
+                <p class="mt-1.5 text-sm font-semibold text-slate-950">
+                    {% if profile.has_farm_location %}
+                        Farm location saved
+                    {% else %}
+                        Farm location still needs a pin
+                    {% endif %}
+                </p>
+                <p class="mt-1 text-[13px] leading-5 text-slate-600">
+                    {% if profile.has_farm_location %}
+                        Providers can use the saved farm pin when a follow-up visit is needed.
+                    {% else %}
+                        Save one clear farm pin so the veterinary team can route there faster.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="mt-3 space-y-3">
+                {% for item in overview_support_items %}
+                    <a href="{{ item.url }}" class="flex items-start justify-between gap-4 rounded-[1.1rem] border border-slate-200 bg-white px-4 py-3.5 transition hover:border-slate-300 hover:bg-slate-50">
                         <div class="min-w-0">
-                            <p class="text-sm font-semibold text-slate-900">{{ cow.name }} {{ cow.cow_number }}</p>
-                            <p class="mt-1 text-sm leading-6 text-slate-600">{{ cow.alert_category }} - {{ cow.summary_text }}</p>
+                            <p class="text-sm font-semibold text-slate-950">{{ item.label }}</p>
+                            <p class="mt-1 text-[13px] leading-5 text-slate-600">{{ item.description }}</p>
                         </div>
-                        <a href="{% url 'farmers_dashboard:cow_tracking' cow.pk %}" class="inline-flex text-sm font-semibold text-[#0d4a87] transition hover:text-[#0b3968]">
-                            Track cow
-                        </a>
-                    </article>
+                        <span class="flex-shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">{{ item.meta }}</span>
+                    </a>
                 {% endfor %}
             </div>
-        </section>
-    {% endif %}
+        </div>
+    </section>
 {% endblock %}
