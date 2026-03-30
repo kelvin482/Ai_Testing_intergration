@@ -2,27 +2,27 @@
 
 {% block farmer_dashboard_content %}
     <section class="grid gap-4 md:grid-cols-3">
-        <article class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+        <article class="farmer-panel-tight px-5 py-5">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">All</p>
             <p class="mt-2 text-3xl tracking-tight text-slate-950 font-display">{{ notification_summary.total }}</p>
         </article>
-        <article class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+        <article class="farmer-panel-tight px-5 py-5">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Unread</p>
             <p class="mt-2 text-3xl tracking-tight text-amber-500 font-display">{{ notification_summary.unread }}</p>
         </article>
-        <article class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]">
+        <article class="farmer-panel-tight px-5 py-5">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Replies</p>
             <p class="mt-2 text-3xl tracking-tight text-[#123d6a] font-display">{{ notification_summary.message_updates }}</p>
         </article>
     </section>
 
-    <section class="rounded-[1.8rem] border border-slate-200 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+    <section class="farmer-panel p-5">
         <div class="flex items-center justify-between gap-3">
             <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Recent updates</p>
-                <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">Notifications</h2>
+                <p class="farmer-eyebrow">Recent updates</p>
+                <h2 class="farmer-title">Notifications</h2>
             </div>
-            <a href="{% url 'farmers_dashboard:messages' %}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-50">
+            <a href="{% url 'farmers_dashboard:messages' %}" class="farmer-button-secondary">
                 Open messages
             </a>
         </div>
@@ -56,7 +56,7 @@
                     </div>
                 </div>
             {% empty %}
-                <div class="rounded-[1.3rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+                <div class="farmer-empty-state px-5 py-10">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">All clear</p>
                     <h2 class="mt-2 text-2xl tracking-tight text-slate-950 font-display">No notifications yet</h2>
                     <p class="mx-auto mt-3 max-w-xl text-sm leading-7 text-slate-600">

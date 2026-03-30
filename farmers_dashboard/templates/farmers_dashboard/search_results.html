@@ -1,20 +1,21 @@
 {% extends "farmers_dashboard/base_dashboard.html" %}
 
 {% block farmer_dashboard_content %}
-    <section class="rounded-[1.6rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+    <section class="farmer-panel px-5 py-5">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <h2 class="text-[1.35rem] font-semibold tracking-tight text-slate-950">Search results</h2>
+                <p class="farmer-eyebrow">Search</p>
+                <h2 class="farmer-title">Search results</h2>
                 {% if search_query %}
-                    <p class="mt-1 text-sm text-slate-600">
+                    <p class="farmer-copy mt-1">
                         {{ search_results_total }} result{{ search_results_total|pluralize }} for
                         <span class="font-semibold text-slate-900">"{{ search_query }}"</span>
                     </p>
                 {% else %}
-                    <p class="mt-1 text-sm text-slate-600">Type a cow name, alert keyword, or provider term in the search box above.</p>
+                    <p class="farmer-copy mt-1">Type a cow name, alert keyword, or provider term in the search box above.</p>
                 {% endif %}
             </div>
-            <a href="{% url 'farmers_dashboard:dashboard' %}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
+            <a href="{% url 'farmers_dashboard:dashboard' %}" class="farmer-button-secondary">
                 Back to overview
             </a>
         </div>
@@ -22,7 +23,7 @@
 
     {% if search_query %}
         <section class="grid gap-4 xl:grid-cols-3">
-            <div class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="farmer-panel-tight px-5 py-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-semibold tracking-tight text-slate-950">Cows</h3>
                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">{{ matching_cows|length }}</span>
@@ -41,7 +42,7 @@
                 {% endif %}
             </div>
 
-            <div class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="farmer-panel-tight px-5 py-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-semibold tracking-tight text-slate-950">Alerts</h3>
                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">{{ matching_alerts|length }}</span>
@@ -60,7 +61,7 @@
                 {% endif %}
             </div>
 
-            <div class="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-5 shadow-[0_6px_18px_rgba(15,23,42,0.05)]">
+            <div class="farmer-panel-tight px-5 py-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-semibold tracking-tight text-slate-950">Service support</h3>
                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">{{ matching_providers|length }}</span>

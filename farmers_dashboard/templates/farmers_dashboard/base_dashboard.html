@@ -34,6 +34,102 @@
         .dashboard-shell {
             width: min(100%, 1320px);
         }
+
+        .farmer-panel {
+            border: 1px solid rgb(226 232 240);
+            border-radius: 1.8rem;
+            background: white;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+        }
+
+        .farmer-panel-tight {
+            border: 1px solid rgb(226 232 240);
+            border-radius: 1.5rem;
+            background: white;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+        }
+
+        .farmer-soft-card {
+            border: 1px solid rgb(226 232 240);
+            border-radius: 1.1rem;
+            background: rgb(248 250 252 / 0.82);
+        }
+
+        .farmer-eyebrow {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: rgb(148 163 184);
+        }
+
+        .farmer-title {
+            margin-top: 0.5rem;
+            font-family: "Poppins", "Segoe UI", sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+            color: rgb(15 23 42);
+        }
+
+        .farmer-copy {
+            margin-top: 0.65rem;
+            max-width: 42rem;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: rgb(100 116 139);
+        }
+
+        .farmer-action-link {
+            color: #0d4a87;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: color 150ms ease;
+        }
+
+        .farmer-action-link:hover {
+            color: #0b3968;
+        }
+
+        .farmer-button-primary {
+            border-radius: 1rem;
+            background: #14532d;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            transition: background-color 150ms ease;
+        }
+
+        .farmer-button-primary:hover {
+            background: #114524;
+        }
+
+        .farmer-button-secondary {
+            border: 1px solid rgb(226 232 240);
+            border-radius: 1rem;
+            background: white;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: rgb(15 23 42);
+            text-align: center;
+            transition: border-color 150ms ease, background-color 150ms ease;
+        }
+
+        .farmer-button-secondary:hover {
+            border-color: rgb(203 213 225);
+            background: rgb(248 250 252);
+        }
+
+        .farmer-empty-state {
+            border: 1px dashed rgb(203 213 225);
+            border-radius: 1.8rem;
+            background: rgb(248 250 252 / 0.7);
+            text-align: center;
+        }
     </style>
     {% block farmer_dashboard_head %}{% endblock %}
 </head>
