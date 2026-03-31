@@ -6,9 +6,17 @@ from django.views.decorators.clickjacking import xframe_options_sameorigin
 from .services.ai_service import get_ai_advice, get_ai_provider
 
 
+def _json_error(message: str, *, status: int) -> JsonResponse:
+    """Keep API error responses consistent across the assistant endpoints."""
+
+    return JsonResponse({"ok": False, "error": message}, status=status)
+
+
 @login_required
 @xframe_options_sameorigin
 def index(request):
+    """Render the authenticated Cow Calving AI workspace."""
+
     # The AI dashboard is the current post-login landing page, so it stays
     # behind authentication until a broader public home page is added.
     # The embedded query flag lets the dashboards load the assistant inside the
@@ -26,21 +34,20 @@ def index(request):
 
 @login_required
 def ai_test(request):
+    """Return a lightweight JSON response for the in-app AI demo."""
+
     # Keep the test endpoint protected too so browser requests do not leak into
     # the AI demo without an authenticated session.
     question = request.GET.get("q", "").strip()
     cow_id = request.GET.get("cow_id", "").strip()
 
     if not question:
-        return JsonResponse(
-            {"ok": False, "error": "Provide a question using ?q=..."},
-            status=400,
-        )
+        return _json_error("Provide a question using ?q=...", status=400)
 
     try:
         advice = get_ai_advice(question=question, cow_id=cow_id or None)
     except Exception as exc:
-        return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+        return _json_error(str(exc), status=500)
 
     return JsonResponse(
         {
