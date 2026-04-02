@@ -1,5 +1,4 @@
 # Team Rules (Quick Reference)
-
 - Act as a senior software engineer.
 - Never hallucinate libraries, APIs, or features.
 - Strictly follow all rules in this document and related instruction files.
