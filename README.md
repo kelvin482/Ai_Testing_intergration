@@ -33,7 +33,7 @@ Cow calving is a high-stakes period for farmers. Good outcomes depend on prepara
 - PostgreSQL-ready database configuration via environment variables
 - Django Allauth for authentication and social login support
 - OpenAI SDK support inside the AI app service layer
-- HTML, CSS, and JavaScript for frontend pages
+- HTML, CSS, and JavaScript for frontend pages.
 
 ## Quick Start
 
@@ -47,7 +47,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Then open `http://127.0.0.1:8000/`.
+Open `http://127.0.0.1:8000/`.
 
 ## Repository Structure
 
